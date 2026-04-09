@@ -6,6 +6,8 @@ public class Device
 {
     public Guid Id { get; set; }
 
+    public string Tag { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty;
 
     public string Manufacturer { get; set; } = string.Empty;
