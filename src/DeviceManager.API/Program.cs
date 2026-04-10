@@ -1,4 +1,5 @@
 using System.Reflection;
+using DeviceManager.API.Middleware;
 using DeviceManager.Application;
 using DeviceManager.Infrastructure;
 using Serilog;
@@ -46,6 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthorization();
