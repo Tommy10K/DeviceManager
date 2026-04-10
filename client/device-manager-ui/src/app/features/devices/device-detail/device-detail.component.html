@@ -1,0 +1,34 @@
+<section class="device-detail-page">
+  <div class="loading" *ngIf="isLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading && notFound" class="not-found">
+    <h2>Device not found</h2>
+    <p>The requested device does not exist.</p>
+    <button mat-button type="button" (click)="goBack()">Back</button>
+  </div>
+
+  <p class="error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</p>
+
+  <div class="details" *ngIf="!isLoading && !notFound && !errorMessage && device">
+    <header class="page-header">
+      <h1>{{ device.name }}</h1>
+      <div class="actions">
+        <button mat-button type="button" (click)="goBack()">Back</button>
+        <button mat-raised-button color="primary" type="button" *ngIf="isAdmin" (click)="goToEdit()">
+          Edit
+        </button>
+      </div>
+    </header>
+
+    <p><strong>Tag:</strong> {{ device.tag }}</p>
+    <p><strong>Manufacturer:</strong> {{ device.manufacturer }}</p>
+    <p><strong>Type:</strong> {{ typeLabel }}</p>
+    <p><strong>Operating System:</strong> {{ device.operatingSystem }} {{ device.osVersion }}</p>
+    <p><strong>Processor:</strong> {{ device.processor }}</p>
+    <p><strong>RAM:</strong> {{ device.ramAmount }}</p>
+    <p><strong>Description:</strong> {{ device.description || 'No description' }}</p>
+    <p><strong>Assigned User:</strong> {{ device.assignedUser?.name || 'Unassigned' }}</p>
+  </div>
+</section>
