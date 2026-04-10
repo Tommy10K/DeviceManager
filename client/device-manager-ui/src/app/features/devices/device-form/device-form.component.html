@@ -1,0 +1,105 @@
+<section class="device-form-page" *ngIf="isAdmin; else noAccess">
+  <header class="page-header">
+    <h1>{{ pageTitle }}</h1>
+  </header>
+
+  <div class="loading" *ngIf="isLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!isLoading" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Tag</mat-label>
+      <input matInput formControlName="tag" />
+      <mat-error *ngIf="form.controls.tag.touched && form.controls.tag.hasError('required')">
+        Tag is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      <mat-error *ngIf="form.controls.name.touched && form.controls.name.hasError('required')">
+        Name is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Manufacturer</mat-label>
+      <input matInput formControlName="manufacturer" />
+      <mat-error *ngIf="form.controls.manufacturer.touched && form.controls.manufacturer.hasError('required')">
+        Manufacturer is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-option [value]="deviceTypes[0].value">{{ deviceTypes[0].label }}</mat-option>
+        <mat-option [value]="deviceTypes[1].value">{{ deviceTypes[1].label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Operating System</mat-label>
+      <input matInput formControlName="operatingSystem" />
+      <mat-error *ngIf="form.controls.operatingSystem.touched && form.controls.operatingSystem.hasError('required')">
+        Operating system is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>OS Version</mat-label>
+      <input matInput formControlName="osVersion" />
+      <mat-error *ngIf="form.controls.osVersion.touched && form.controls.osVersion.hasError('required')">
+        OS version is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Processor</mat-label>
+      <input matInput formControlName="processor" />
+      <mat-error *ngIf="form.controls.processor.touched && form.controls.processor.hasError('required')">
+        Processor is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>RAM Amount</mat-label>
+      <input matInput formControlName="ramAmount" />
+      <mat-error *ngIf="form.controls.ramAmount.touched && form.controls.ramAmount.hasError('required')">
+        RAM amount is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="4"></textarea>
+      <mat-error *ngIf="form.controls.description.touched && form.controls.description.hasError('required')">
+        Description is required.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Assigned User Id (optional)</mat-label>
+      <input matInput formControlName="assignedUserId" />
+    </mat-form-field>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="actions full-width">
+      <button mat-button type="button" (click)="cancel()">Cancel</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+        {{ isEditMode ? 'Update Device' : 'Create Device' }}
+      </button>
+    </div>
+  </form>
+</section>
+
+<ng-template #noAccess>
+  <section class="device-form-page">
+    <h2>Access denied</h2>
+    <p>Only admins can create or edit devices.</p>
+    <button mat-button type="button" (click)="cancel()">Back</button>
+  </section>
+</ng-template>
