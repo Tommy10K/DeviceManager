@@ -5,4 +5,7 @@
     <Project Path="src/DeviceManager.Domain/DeviceManager.Domain.csproj" />
     <Project Path="src/DeviceManager.Infrastructure/DeviceManager.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DeviceManager.IntegrationTests/DeviceManager.IntegrationTests.csproj" />
+  </Folder>
 </Solution>
