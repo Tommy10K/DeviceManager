@@ -1,1 +1,24 @@
-<router-outlet></router-outlet>
+<div class="app-shell">
+	<mat-toolbar color="primary" class="top-toolbar">
+		<a class="brand" routerLink="/devices">Device Manager</a>
+		<span class="spacer"></span>
+		<span class="role-chip">{{ currentUserRole }}</span>
+	</mat-toolbar>
+
+	<nav class="main-nav" aria-label="Primary navigation">
+		<a mat-button routerLink="/devices" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
+			Devices
+		</a>
+		<a mat-button routerLink="/devices/new" routerLinkActive="active-link" *ngIf="isAdmin">
+			Add Device
+		</a>
+		<span class="menu-note" *ngIf="isAdmin">Admin menu</span>
+		<span class="menu-note" *ngIf="!isAdmin">User menu</span>
+	</nav>
+
+	<main class="page-content">
+		<router-outlet></router-outlet>
+	</main>
+
+	<footer class="app-footer">Device Manager demo application</footer>
+</div>
