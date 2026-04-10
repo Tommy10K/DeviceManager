@@ -58,6 +58,26 @@
 	padding: 0.5rem 1rem 1.5rem;
 }
 
+.api-error-banner {
+	align-items: center;
+	background: #ffe5e7;
+	border: 1px solid #f2b5bb;
+	border-radius: 6px;
+	color: #7e131a;
+	display: flex;
+	justify-content: space-between;
+	margin: 0.5rem auto 0.75rem;
+	max-width: 1200px;
+	padding: 0.4rem 0.6rem;
+}
+
+.route-title {
+	color: #242424;
+	font-size: 1.4rem;
+	margin: 0 auto 0.25rem;
+	max-width: 1200px;
+}
+
 .app-footer {
 	background: #ffffff;
 	border-top: 1px solid #e2e2e2;
@@ -87,5 +107,15 @@
 
 	.page-content {
 		padding: 0.5rem;
+	}
+
+	.api-error-banner {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.route-title {
+		font-size: 1.2rem;
 	}
 }

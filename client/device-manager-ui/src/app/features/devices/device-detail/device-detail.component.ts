@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { Device, DeviceType } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
+import { ErrorStateService } from '../../../core/services/error-state.service';
 
 @Component({
   selector: 'app-device-detail',
@@ -27,6 +28,7 @@ export class DeviceDetailComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly deviceService: DeviceService,
+    private readonly errorStateService: ErrorStateService,
   ) {}
 
   ngOnInit(): void {
@@ -68,11 +70,13 @@ export class DeviceDetailComponent implements OnInit {
   private loadDevice(deviceId: string): void {
     this.isLoading = true;
     this.errorMessage = '';
+    this.errorStateService.clearApiError();
 
     this.deviceService.getById(deviceId).subscribe({
       next: (device) => {
         this.device = device;
         this.isLoading = false;
+        this.errorStateService.clearApiError();
       },
       error: (error: unknown) => {
         const httpError = error as HttpErrorResponse;
@@ -81,6 +85,7 @@ export class DeviceDetailComponent implements OnInit {
           this.notFound = true;
         } else {
           this.errorMessage = 'Failed to load device details.';
+          this.errorStateService.setApiError(this.errorMessage);
         }
 
         this.isLoading = false;

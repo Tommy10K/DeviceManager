@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 
 import { Device, DeviceType } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
+import { ErrorStateService } from '../../../core/services/error-state.service';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -45,6 +46,7 @@ export class DeviceListComponent implements OnInit {
 
   constructor(
     private readonly deviceService: DeviceService,
+    private readonly errorStateService: ErrorStateService,
     private readonly dialog: MatDialog,
     private readonly router: Router,
   ) {}
@@ -60,14 +62,17 @@ export class DeviceListComponent implements OnInit {
   loadDevices(): void {
     this.isLoading = true;
     this.errorMessage = '';
+    this.errorStateService.clearApiError();
 
     this.deviceService.getAll().subscribe({
       next: (devices) => {
         this.devices = devices;
         this.isLoading = false;
+        this.errorStateService.clearApiError();
       },
       error: () => {
         this.errorMessage = 'Failed to load devices.';
+        this.errorStateService.setApiError(this.errorMessage);
         this.isLoading = false;
       },
     });
@@ -105,6 +110,7 @@ export class DeviceListComponent implements OnInit {
         next: () => this.loadDevices(),
         error: () => {
           this.errorMessage = 'Failed to delete device.';
+          this.errorStateService.setApiError(this.errorMessage);
         },
       });
     });

@@ -16,6 +16,7 @@ import {
   DeviceType,
 } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
+import { ErrorStateService } from '../../../core/services/error-state.service';
 
 @Component({
   selector: 'app-device-form',
@@ -53,6 +54,7 @@ export class DeviceFormComponent implements OnInit {
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly deviceService: DeviceService,
+    private readonly errorStateService: ErrorStateService,
   ) {
     this.form = this.formBuilder.nonNullable.group({
       tag: ['', [Validators.required, Validators.maxLength(100)]],
@@ -69,6 +71,8 @@ export class DeviceFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.errorStateService.clearApiError();
+
     const id = this.route.snapshot.paramMap.get('id');
 
     if (!id) {
@@ -96,6 +100,7 @@ export class DeviceFormComponent implements OnInit {
 
     this.errorMessage = '';
     this.isSubmitting = true;
+    this.errorStateService.clearApiError();
     const request = this.buildRequest();
 
     if (this.isEditMode && this.deviceId) {
@@ -144,6 +149,7 @@ export class DeviceFormComponent implements OnInit {
       },
       error: () => {
         this.errorMessage = 'Failed to load device.';
+        this.errorStateService.setApiError(this.errorMessage);
         this.isLoading = false;
       },
     });
@@ -189,6 +195,8 @@ export class DeviceFormComponent implements OnInit {
     } else {
       this.errorMessage = 'Failed to save device.';
     }
+
+    this.errorStateService.setApiError(this.errorMessage);
 
     this.snackBar.open(this.errorMessage, 'Close', {
       duration: 3000,

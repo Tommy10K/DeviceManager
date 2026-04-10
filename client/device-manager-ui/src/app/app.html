@@ -17,6 +17,13 @@
 	</nav>
 
 	<main class="page-content">
+		<section class="api-error-banner" *ngIf="(apiError$ | async) as apiError">
+			<span>{{ apiError }}</span>
+			<button mat-button type="button" (click)="dismissApiError()">Dismiss</button>
+		</section>
+
+		<h1 class="route-title">{{ pageTitle }}</h1>
+
 		<router-outlet></router-outlet>
 	</main>
 
