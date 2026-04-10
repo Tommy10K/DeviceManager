@@ -1,0 +1,45 @@
+.device-list-page {
+  padding: 1rem;
+}
+
+.page-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.role-note {
+  margin: 0 0 1rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.error {
+  color: #b00020;
+}
+
+.empty {
+  color: #555;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.devices-table {
+  min-width: 760px;
+  width: 100%;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
