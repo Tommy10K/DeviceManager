@@ -54,4 +54,22 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
     }
+
+    public async Task ExecuteDbContextAsync(Func<AppDbContext, Task> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await operation(dbContext);
+    }
+
+    public async Task<T> ExecuteDbContextAsync<T>(Func<AppDbContext, Task<T>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await operation(dbContext);
+    }
 }
