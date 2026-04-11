@@ -1,7 +1,9 @@
 using DeviceManager.Application.DTOs;
+using DeviceManager.Application.Exceptions;
 using DeviceManager.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DeviceManager.API.Controllers;
 
@@ -88,5 +90,50 @@ public sealed class DevicesController : ControllerBase
     {
         await _deviceService.DeleteDeviceAsync(id);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Assigns a device to the authenticated user.
+    /// </summary>
+    /// <param name="id">Device identifier.</param>
+    [HttpPost("{id:guid}/assign")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<DeviceDto>> Assign(Guid id)
+    {
+        var currentUserId = GetCurrentUserId();
+        var updatedDevice = await _deviceService.AssignDeviceToUserAsync(id, currentUserId);
+        return Ok(updatedDevice);
+    }
+
+    /// <summary>
+    /// Unassigns a device from the authenticated user.
+    /// </summary>
+    /// <param name="id">Device identifier.</param>
+    [HttpPost("{id:guid}/unassign")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeviceDto>> Unassign(Guid id)
+    {
+        var currentUserId = GetCurrentUserId();
+        var updatedDevice = await _deviceService.UnassignDeviceFromUserAsync(id, currentUserId);
+        return Ok(updatedDevice);
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            throw new BadRequestException("Authenticated user id claim is missing or invalid.");
+        }
+
+        return userId;
     }
 }

@@ -91,6 +91,66 @@ public sealed class DeviceService : IDeviceService
         await _deviceRepository.DeleteAsync(id);
     }
 
+    public async Task<DeviceDto> AssignDeviceToUserAsync(Guid deviceId, Guid userId)
+    {
+        var device = await _deviceRepository.GetByIdAsync(deviceId);
+        if (device is null)
+        {
+            throw new NotFoundException($"Device with id '{deviceId}' was not found.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User with id '{userId}' was not found.");
+        }
+
+        if (device.AssignedUserId.HasValue)
+        {
+            if (device.AssignedUserId.Value == userId)
+            {
+                throw new BadRequestException("Device is already assigned to the current user.");
+            }
+
+            throw new ConflictException("Device is already assigned to another user.");
+        }
+
+        device.AssignedUserId = userId;
+        device.AssignedUser = user;
+        device.UpdatedAt = DateTime.UtcNow;
+
+        var updatedDevice = await _deviceRepository.UpdateAsync(device);
+        updatedDevice.AssignedUser ??= user;
+
+        return _mapper.Map<DeviceDto>(updatedDevice);
+    }
+
+    public async Task<DeviceDto> UnassignDeviceFromUserAsync(Guid deviceId, Guid userId)
+    {
+        var device = await _deviceRepository.GetByIdAsync(deviceId);
+        if (device is null)
+        {
+            throw new NotFoundException($"Device with id '{deviceId}' was not found.");
+        }
+
+        if (!device.AssignedUserId.HasValue)
+        {
+            throw new BadRequestException("Device is not currently assigned.");
+        }
+
+        if (device.AssignedUserId.Value != userId)
+        {
+            throw new ForbiddenException("You can only unassign devices assigned to you.");
+        }
+
+        device.AssignedUserId = null;
+        device.AssignedUser = null;
+        device.UpdatedAt = DateTime.UtcNow;
+
+        var updatedDevice = await _deviceRepository.UpdateAsync(device);
+        return _mapper.Map<DeviceDto>(updatedDevice);
+    }
+
     private async Task EnsureUniqueTagAsync(string tag, Guid? currentDeviceId = null)
     {
         var existingDeviceWithTag = await _deviceRepository.GetByTagAsync(tag);
