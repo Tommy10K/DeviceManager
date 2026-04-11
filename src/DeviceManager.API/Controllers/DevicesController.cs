@@ -1,5 +1,6 @@
 using DeviceManager.Application.DTOs;
 using DeviceManager.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DeviceManager.API.Controllers;
@@ -9,6 +10,7 @@ namespace DeviceManager.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class DevicesController : ControllerBase
 {
     private readonly IDeviceService _deviceService;
@@ -47,6 +49,7 @@ public sealed class DevicesController : ControllerBase
     /// </summary>
     /// <param name="request">Device payload.</param>
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -62,6 +65,7 @@ public sealed class DevicesController : ControllerBase
     /// <param name="id">Device identifier.</param>
     /// <param name="request">Updated device payload.</param>
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -77,6 +81,7 @@ public sealed class DevicesController : ControllerBase
     /// </summary>
     /// <param name="id">Device identifier.</param>
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
