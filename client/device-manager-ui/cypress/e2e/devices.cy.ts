@@ -23,6 +23,27 @@ interface Device {
   assignedUser: User | null;
 }
 
+const encodeBase64Url = (value: string): string =>
+  Cypress.Buffer.from(value)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+const createToken = (role: 'Admin' | 'User'): string => {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    sub: '11111111-1111-1111-1111-111111111111',
+    name: 'Cypress User',
+    email: 'cypress@example.com',
+    role,
+    exp: now + 3600,
+  };
+
+  return `${encodeBase64Url(JSON.stringify(header))}.${encodeBase64Url(JSON.stringify(payload))}.signature`;
+};
+
 describe('Devices CRUD flow', () => {
   let devices: Device[];
   let sequence = 2;
@@ -83,8 +104,13 @@ describe('Devices CRUD flow', () => {
 
   it('renders list, creates device, deletes device, and opens details', () => {
     const newTag = 'TAG-NEW-001';
+    const token = createToken('Admin');
 
-    cy.visit('/devices');
+    cy.visit('/devices', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('device_manager_token', token);
+      },
+    });
     cy.wait('@getDevices');
 
     cy.get('table.devices-table').should('be.visible');

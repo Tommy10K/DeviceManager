@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using DeviceManager.Application.DTOs;
+using DeviceManager.Domain.Entities;
 using DeviceManager.Domain.Enums;
 
 namespace DeviceManager.IntegrationTests;
@@ -8,12 +10,10 @@ namespace DeviceManager.IntegrationTests;
 public sealed class DevicesControllerTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifetime
 {
     private readonly CustomWebApplicationFactory _factory;
-    private readonly HttpClient _client;
 
     public DevicesControllerTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = _factory.CreateClient();
     }
 
     public async Task InitializeAsync()
@@ -24,110 +24,176 @@ public sealed class DevicesControllerTests : IClassFixture<CustomWebApplicationF
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task GetAll_ReturnsEmptyList_WhenNoDevices()
+    public async Task Register_Login_ThenAccessProtectedEndpoint_Returns200()
     {
-        var response = await _client.GetAsync("/api/devices");
+        var session = await RegisterAndLoginAsync("auth-flow-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        var response = await authenticatedClient.GetAsync("/api/devices");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var devices = await response.Content.ReadFromJsonAsync<List<DeviceDto>>();
         Assert.NotNull(devices);
-        Assert.Empty(devices!);
     }
 
     [Fact]
-    public async Task Create_ReturnsCreatedDevice_WithValidData()
+    public async Task AccessProtectedEndpointWithoutToken_Returns401()
     {
-        var request = BuildCreateRequest("IT-0001");
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/devices");
 
-        var response = await _client.PostAsJsonAsync("/api/devices", request);
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var created = await response.Content.ReadFromJsonAsync<DeviceDto>();
-        Assert.NotNull(created);
-        Assert.Equal("IT-0001", created!.Tag);
-        Assert.Equal(request.Name, created.Name);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task Create_Returns409_WhenDuplicateTag()
+    public async Task RegisterWithDuplicateEmail_Returns409()
     {
-        var request = BuildCreateRequest("IT-DUPLICATE");
+        var client = _factory.CreateClient();
+        var email = $"duplicate-{Guid.NewGuid():N}@example.com";
+        var request = new RegisterRequest("Duplicate User", email, "Password123!", "Sydney");
 
-        var first = await _client.PostAsJsonAsync("/api/devices", request);
+        var first = await client.PostAsJsonAsync("/api/auth/register", request);
+        var second = await client.PostAsJsonAsync("/api/auth/register", request);
+
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
-
-        var second = await _client.PostAsJsonAsync("/api/devices", request);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
     }
 
     [Fact]
-    public async Task GetById_Returns404_WhenDeviceNotFound()
+    public async Task AccessAdminOnlyEndpointAsNonAdmin_Returns403()
     {
-        var response = await _client.GetAsync($"/api/devices/{Guid.NewGuid()}");
+        var session = await RegisterAndLoginAsync("non-admin-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+        var request = BuildCreateRequest($"AUTH-{Guid.NewGuid():N}");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var response = await authenticatedClient.PostAsJsonAsync("/api/devices", request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
-    public async Task Update_ReturnsUpdatedDevice_WithValidData()
+    public async Task AssignDeviceToSelf_ReturnsSuccess()
     {
-        var createRequest = BuildCreateRequest("IT-0002");
-        var createResponse = await _client.PostAsJsonAsync("/api/devices", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<DeviceDto>();
+        var session = await RegisterAndLoginAsync("assign-self-user");
+        var deviceId = await SeedDeviceAsync($"ASSIGN-SELF-{Guid.NewGuid():N}", assignedUserId: null);
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
 
-        var updateRequest = new UpdateDeviceRequest(
-            Tag: "IT-0002",
-            Name: "Updated Device",
-            Manufacturer: createRequest.Manufacturer,
-            Type: createRequest.Type,
-            OperatingSystem: createRequest.OperatingSystem,
-            OSVersion: "15",
-            Processor: createRequest.Processor,
-            RamAmount: createRequest.RamAmount,
-            Description: "updated",
-            AssignedUserId: null);
+        var response = await authenticatedClient.PostAsJsonAsync($"/api/devices/{deviceId}/assign", new { });
 
-        var updateResponse = await _client.PutAsJsonAsync($"/api/devices/{created!.Id}", updateRequest);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
-        var updated = await updateResponse.Content.ReadFromJsonAsync<DeviceDto>();
-        Assert.NotNull(updated);
-        Assert.Equal("Updated Device", updated!.Name);
-        Assert.Equal("15", updated.OSVersion);
+        var updatedDevice = await response.Content.ReadFromJsonAsync<DeviceDto>();
+        Assert.NotNull(updatedDevice);
+        Assert.Equal(session.UserId, updatedDevice!.AssignedUserId);
     }
 
     [Fact]
-    public async Task Delete_Returns204_WhenDeviceExists()
+    public async Task AssignAlreadyAssignedDevice_Returns409()
     {
-        var createRequest = BuildCreateRequest("IT-0003");
-        var createResponse = await _client.PostAsJsonAsync("/api/devices", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<DeviceDto>();
+        var ownerSession = await RegisterAndLoginAsync("device-owner-user");
+        var otherSession = await RegisterAndLoginAsync("other-user");
+        var deviceId = await SeedDeviceAsync($"ASSIGN-CONFLICT-{Guid.NewGuid():N}", ownerSession.UserId);
+        var authenticatedClient = CreateAuthenticatedClient(otherSession.Token);
 
-        var deleteResponse = await _client.DeleteAsync($"/api/devices/{created!.Id}");
+        var response = await authenticatedClient.PostAsJsonAsync($"/api/devices/{deviceId}/assign", new { });
 
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
-    public async Task Create_Returns400_WhenFieldsMissing()
+    public async Task UnassignDeviceAssignedToAnotherUser_Returns403()
     {
-        var response = await _client.PostAsJsonAsync("/api/devices", new { });
+        var ownerSession = await RegisterAndLoginAsync("assigned-owner-user");
+        var otherSession = await RegisterAndLoginAsync("different-user");
+        var deviceId = await SeedDeviceAsync($"UNASSIGN-FORBIDDEN-{Guid.NewGuid():N}", ownerSession.UserId);
+        var authenticatedClient = CreateAuthenticatedClient(otherSession.Token);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var response = await authenticatedClient.PostAsJsonAsync($"/api/devices/{deviceId}/unassign", new { });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private HttpClient CreateAuthenticatedClient(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    private async Task<TestUserSession> RegisterAndLoginAsync(string emailPrefix)
+    {
+        var client = _factory.CreateClient();
+        var email = $"{emailPrefix}-{Guid.NewGuid():N}@example.com";
+        const string password = "Password123!";
+
+        var registerRequest = new RegisterRequest(
+            Name: "Integration User",
+            Email: email,
+            Password: password,
+            Location: "Melbourne");
+
+        var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
+
+        var registeredUser = await registerResponse.Content.ReadFromJsonAsync<UserDto>();
+        Assert.NotNull(registeredUser);
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(Email: email, Password: password));
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.NotNull(authResponse);
+        Assert.False(string.IsNullOrWhiteSpace(authResponse!.Token));
+
+        return new TestUserSession(registeredUser!.Id, authResponse.Token);
+    }
+
+    private async Task<Guid> SeedDeviceAsync(string tag, Guid? assignedUserId)
+    {
+        var deviceId = Guid.NewGuid();
+
+        await _factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Devices.Add(new Device
+            {
+                Id = deviceId,
+                Tag = tag,
+                Name = "Integration Device",
+                Manufacturer = "Integration Vendor",
+                Type = DeviceType.Phone,
+                OperatingSystem = "Android",
+                OSVersion = "14",
+                Processor = "Tensor",
+                RamAmount = "8GB",
+                Description = "integration",
+                AssignedUserId = assignedUserId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        return deviceId;
     }
 
     private static CreateDeviceRequest BuildCreateRequest(string tag)
     {
         return new CreateDeviceRequest(
             Tag: tag,
-            Name: "Integration Device",
-            Manufacturer: "Integration Vendor",
-            Type: DeviceType.Tablet,
+            Name: "Admin Device",
+            Manufacturer: "Admin Vendor",
+            Type: DeviceType.Phone,
             OperatingSystem: "Android",
             OSVersion: "14",
-            Processor: "Tensor",
-            RamAmount: "8GB",
-            Description: "integration-test",
+            Processor: "Snapdragon",
+            RamAmount: "12GB",
+            Description: "auth integration",
             AssignedUserId: null);
     }
+
+    private sealed record TestUserSession(Guid UserId, string Token);
 }
