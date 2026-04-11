@@ -4,9 +4,9 @@ import { DeviceFormComponent } from './features/devices/device-form/device-form.
 import { DeviceListComponent } from './features/devices/device-list/device-list.component';
 
 export const routes: Routes = [
-	{ path: '', redirectTo: 'devices', pathMatch: 'full' },
-	{ path: 'devices', component: DeviceListComponent },
-	{ path: 'devices/new', component: DeviceFormComponent },
-	{ path: 'devices/:id/edit', component: DeviceFormComponent },
-	{ path: 'devices/:id', component: DeviceDetailComponent },
+  { path: '', redirectTo: 'devices', pathMatch: 'full' },
+  { path: 'devices', component: DeviceListComponent, data: { title: 'Devices' } },
+  { path: 'devices/new', component: DeviceFormComponent, data: { title: 'Add Device' } },
+  { path: 'devices/:id/edit', component: DeviceFormComponent, data: { title: 'Edit Device' } },
+  { path: 'devices/:id', component: DeviceDetailComponent, data: { title: 'Device Details' } },
 ];

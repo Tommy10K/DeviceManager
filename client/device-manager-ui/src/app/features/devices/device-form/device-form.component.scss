@@ -1,4 +1,5 @@
 .device-form-page {
+  margin: 0 auto;
   max-width: 900px;
   padding: 1rem;
 }
@@ -32,4 +33,28 @@
 .error {
   color: #b00020;
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .device-form-page {
+    padding: 0.75rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .device-form-page {
+    padding: 0.5rem;
+  }
 }

@@ -1,0 +1,121 @@
+:host {
+	display: block;
+	min-height: 100dvh;
+}
+
+.app-shell {
+	background: #f5f6f8;
+	display: grid;
+	grid-template-rows: auto auto 1fr auto;
+	min-height: 100dvh;
+}
+
+.top-toolbar {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.brand {
+	color: inherit;
+	font-size: 1.1rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.spacer {
+	flex: 1 1 auto;
+}
+
+.role-chip {
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 12px;
+	font-size: 0.85rem;
+	padding: 0.15rem 0.6rem;
+}
+
+.main-nav {
+	align-items: center;
+	background: #ffffff;
+	border-bottom: 1px solid #e2e2e2;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+}
+
+.active-link {
+	font-weight: 600;
+}
+
+.menu-note {
+	color: #666;
+	font-size: 0.9rem;
+	margin-left: auto;
+}
+
+.page-content {
+	padding: 0.5rem 1rem 1.5rem;
+}
+
+.api-error-banner {
+	align-items: center;
+	background: #ffe5e7;
+	border: 1px solid #f2b5bb;
+	border-radius: 6px;
+	color: #7e131a;
+	display: flex;
+	justify-content: space-between;
+	margin: 0.5rem auto 0.75rem;
+	max-width: 1200px;
+	padding: 0.4rem 0.6rem;
+}
+
+.route-title {
+	color: #242424;
+	font-size: 1.4rem;
+	margin: 0 auto 0.25rem;
+	max-width: 1200px;
+}
+
+.app-footer {
+	background: #ffffff;
+	border-top: 1px solid #e2e2e2;
+	color: #666;
+	font-size: 0.9rem;
+	padding: 0.75rem 1rem;
+	text-align: center;
+}
+
+@media (max-width: 480px) {
+	.top-toolbar {
+		min-height: 56px;
+	}
+
+	.brand {
+		font-size: 1rem;
+	}
+
+	.main-nav {
+		padding: 0.5rem;
+	}
+
+	.menu-note {
+		margin-left: 0;
+		width: 100%;
+	}
+
+	.page-content {
+		padding: 0.5rem;
+	}
+
+	.api-error-banner {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.route-title {
+		font-size: 1.2rem;
+	}
+}
