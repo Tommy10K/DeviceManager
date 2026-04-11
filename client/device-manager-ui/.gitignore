@@ -41,6 +41,9 @@ pnpm-debug.log*
 .sass-cache/
 /connect.lock
 /coverage
+/cypress/videos
+/cypress/screenshots
+/cypress/downloads
 /libpeerconnection.log
 testem.log
 /typings
