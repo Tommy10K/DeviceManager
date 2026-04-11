@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,15 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 
-import { environment } from '../../../../environments/environment';
-
-interface RegisterResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: number;
-  location: string;
-}
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -38,7 +29,7 @@ export class RegisterComponent {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly http: HttpClient,
+    private readonly authService: AuthService,
     private readonly router: Router,
   ) {
     this.form = this.formBuilder.nonNullable.group({
@@ -58,8 +49,8 @@ export class RegisterComponent {
     this.errorMessage = '';
     this.isSubmitting = true;
 
-    this.http
-      .post<RegisterResponse>(`${environment.apiUrl}/auth/register`, this.form.getRawValue())
+    this.authService
+      .register(this.form.getRawValue())
       .subscribe({
         next: () => {
           this.router.navigate(['/login'], {

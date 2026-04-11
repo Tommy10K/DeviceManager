@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,13 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 
-import { environment } from '../../../../environments/environment';
-
-interface LoginResponse {
-  token: string;
-  email: string;
-  role: string;
-}
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -36,7 +29,7 @@ export class LoginComponent {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly http: HttpClient,
+    private readonly authService: AuthService,
     private readonly router: Router,
   ) {
     this.form = this.formBuilder.nonNullable.group({
@@ -54,11 +47,10 @@ export class LoginComponent {
     this.errorMessage = '';
     this.isSubmitting = true;
 
-    this.http
-      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, this.form.getRawValue())
+    this.authService
+      .login(this.form.getRawValue())
       .subscribe({
-        next: (response) => {
-          localStorage.setItem('device_manager_token', response.token);
+        next: () => {
           this.router.navigate(['/devices']);
         },
         error: () => {
