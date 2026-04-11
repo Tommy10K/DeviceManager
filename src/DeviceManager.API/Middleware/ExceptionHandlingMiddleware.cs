@@ -64,6 +64,7 @@ public sealed class ExceptionHandlingMiddleware
             NotFoundException => (HttpStatusCode.NotFound, "Resource not found"),
             ConflictException => (HttpStatusCode.Conflict, "Conflict"),
             BadRequestException => (HttpStatusCode.BadRequest, "Bad request"),
+            ForbiddenException => (HttpStatusCode.Forbidden, "Forbidden"),
             ValidationException => (HttpStatusCode.BadRequest, "Validation failed"),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred")
         };
