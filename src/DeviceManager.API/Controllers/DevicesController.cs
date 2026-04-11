@@ -1,5 +1,6 @@
 using DeviceManager.Application.DTOs;
 using DeviceManager.Application.Exceptions;
+using DeviceManager.Application.Interfaces;
 using DeviceManager.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +17,12 @@ namespace DeviceManager.API.Controllers;
 public sealed class DevicesController : ControllerBase
 {
     private readonly IDeviceService _deviceService;
+    private readonly IDescriptionGenerator _descriptionGenerator;
 
-    public DevicesController(IDeviceService deviceService)
+    public DevicesController(IDeviceService deviceService, IDescriptionGenerator descriptionGenerator)
     {
         _deviceService = deviceService;
+        _descriptionGenerator = descriptionGenerator;
     }
 
     /// <summary>
@@ -122,6 +125,85 @@ public sealed class DevicesController : ControllerBase
         var currentUserId = GetCurrentUserId();
         var updatedDevice = await _deviceService.UnassignDeviceFromUserAsync(id, currentUserId);
         return Ok(updatedDevice);
+    }
+
+    /// <summary>
+    /// Generates an AI description from explicit device specifications.
+    /// </summary>
+    /// <param name="request">Device specifications payload.</param>
+    [HttpPost("generate-description")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> GenerateDescription([FromBody] GenerateDescriptionRequest request)
+    {
+        ValidateGenerateDescriptionRequest(request);
+
+        var specs = new DeviceSpecifications(
+            Name: request.Name.Trim(),
+            Manufacturer: request.Manufacturer.Trim(),
+            OperatingSystem: request.OperatingSystem.Trim(),
+            Type: request.Type.Trim(),
+            RamAmount: request.RamAmount.Trim(),
+            Processor: request.Processor.Trim());
+
+        var description = await _descriptionGenerator.GenerateDescriptionAsync(specs);
+        return Ok(description);
+    }
+
+    /// <summary>
+    /// Generates an AI description for an existing device.
+    /// </summary>
+    /// <param name="id">Device identifier.</param>
+    [HttpPost("{id:guid}/generate-description")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<string>> GenerateDescriptionForDevice(Guid id)
+    {
+        var device = await _deviceService.GetDeviceByIdAsync(id);
+
+        var specs = new DeviceSpecifications(
+            Name: device.Name,
+            Manufacturer: device.Manufacturer,
+            OperatingSystem: device.OperatingSystem,
+            Type: device.Type.ToString(),
+            RamAmount: device.RamAmount,
+            Processor: device.Processor);
+
+        var description = await _descriptionGenerator.GenerateDescriptionAsync(specs);
+        return Ok(description);
+    }
+
+    private static void ValidateGenerateDescriptionRequest(GenerateDescriptionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Manufacturer))
+        {
+            throw new BadRequestException("Manufacturer is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.OperatingSystem))
+        {
+            throw new BadRequestException("Operating system is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Type))
+        {
+            throw new BadRequestException("Type is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RamAmount))
+        {
+            throw new BadRequestException("RAM amount is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Processor))
+        {
+            throw new BadRequestException("Processor is required.");
+        }
     }
 
     private Guid GetCurrentUserId()
