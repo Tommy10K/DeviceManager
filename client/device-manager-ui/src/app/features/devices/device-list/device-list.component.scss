@@ -61,7 +61,16 @@
 }
 
 .actions-cell {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
   white-space: nowrap;
+}
+
+.in-use-label {
+  color: #555;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 1024px) {

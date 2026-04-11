@@ -1,0 +1,23 @@
+.auth-page {
+  margin: 0 auto;
+  max-width: 420px;
+  padding: 1rem;
+}
+
+.auth-page h2 {
+  margin: 0 0 1rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.error {
+  color: #b00020;
+  margin: 0;
+}
+
+.auth-link {
+  margin-top: 0.75rem;
+}
