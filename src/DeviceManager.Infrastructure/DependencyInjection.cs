@@ -2,6 +2,7 @@ using DeviceManager.Application.Interfaces;
 using DeviceManager.Domain.Entities;
 using DeviceManager.Infrastructure.Persistence;
 using DeviceManager.Infrastructure.Repositories;
+using DeviceManager.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IDeviceRepository, DeviceRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddScoped<IPasswordService, PasswordService>();
 
         return services;
     }
