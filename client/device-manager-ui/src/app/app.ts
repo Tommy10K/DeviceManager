@@ -13,6 +13,7 @@ import {
 } from '@angular/router';
 import { filter } from 'rxjs';
 
+import { AuthService } from './core/services/auth.service';
 import { ErrorStateService } from './core/services/error-state.service';
 
 @Component({
@@ -30,13 +31,13 @@ import { ErrorStateService } from './core/services/error-state.service';
   styleUrl: './app.scss'
 })
 export class App {
-  readonly currentUserRole: 'Admin' | 'User' = 'Admin';
   pageTitle = 'Devices';
 
   constructor(
     private readonly router: Router,
     private readonly activatedRoute: ActivatedRoute,
     private readonly titleService: Title,
+    private readonly authService: AuthService,
     private readonly errorStateService: ErrorStateService,
   ) {
     this.router.events
@@ -49,7 +50,19 @@ export class App {
   }
 
   get isAdmin(): boolean {
-    return this.currentUserRole === 'Admin';
+    return this.authService.isAdmin();
+  }
+
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
+  get currentUserName(): string {
+    return this.authService.getCurrentUser()?.name ?? '';
+  }
+
+  get currentUserRole(): string {
+    return this.authService.getCurrentUser()?.role ?? '';
   }
 
   get apiError$() {
@@ -58,6 +71,11 @@ export class App {
 
   dismissApiError(): void {
     this.errorStateService.clearApiError();
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   private updatePageTitle(): void {
