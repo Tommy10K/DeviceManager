@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 
 import { Device, DeviceType } from '../../../core/models/device.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
 import {
@@ -42,9 +43,8 @@ export class DeviceListComponent implements OnInit {
     'actions',
   ];
 
-  readonly currentUserRole: 'Admin' | 'User' = 'Admin';
-
   constructor(
+    private readonly authService: AuthService,
     private readonly deviceService: DeviceService,
     private readonly errorStateService: ErrorStateService,
     private readonly dialog: MatDialog,
@@ -56,7 +56,11 @@ export class DeviceListComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    return this.currentUserRole === 'Admin';
+    return this.authService.isAdmin();
+  }
+
+  get currentUserId(): string | null {
+    return this.authService.getCurrentUser()?.id ?? null;
   }
 
   loadDevices(): void {
@@ -87,6 +91,10 @@ export class DeviceListComponent implements OnInit {
   }
 
   confirmDelete(device: Device, event: Event): void {
+    if (!this.isAdmin) {
+      return;
+    }
+
     event.stopPropagation();
 
     const dialogData: ConfirmDialogData = {
@@ -122,5 +130,46 @@ export class DeviceListComponent implements OnInit {
 
   getAssignedUserLabel(device: Device): string {
     return device.assignedUser?.name ?? 'Unassigned';
+  }
+
+  canAssign(device: Device): boolean {
+    return !this.isAdmin && !device.assignedUserId;
+  }
+
+  canUnassign(device: Device): boolean {
+    return !this.isAdmin && !!this.currentUserId && device.assignedUserId === this.currentUserId;
+  }
+
+  isAssignedToOtherUser(device: Device): boolean {
+    return !!device.assignedUserId && device.assignedUserId !== this.currentUserId;
+  }
+
+  assignToMe(device: Device, event: Event): void {
+    event.stopPropagation();
+
+    this.deviceService.assign(device.id).subscribe({
+      next: () => this.loadDevices(),
+      error: () => {
+        this.errorMessage = 'Failed to assign device.';
+        this.errorStateService.setApiError(this.errorMessage);
+      },
+    });
+  }
+
+  unassign(device: Device, event: Event): void {
+    event.stopPropagation();
+
+    this.deviceService.unassign(device.id).subscribe({
+      next: () => this.loadDevices(),
+      error: () => {
+        this.errorMessage = 'Failed to unassign device.';
+        this.errorStateService.setApiError(this.errorMessage);
+      },
+    });
+  }
+
+  openEdit(deviceId: string, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/devices', deviceId, 'edit']);
   }
 }

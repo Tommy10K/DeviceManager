@@ -34,4 +34,12 @@ export class DeviceService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  assign(id: string): Observable<Device> {
+    return this.http.post<Device>(`${this.apiUrl}/${id}/assign`, {});
+  }
+
+  unassign(id: string): Observable<Device> {
+    return this.http.post<Device>(`${this.apiUrl}/${id}/unassign`, {});
+  }
 }
