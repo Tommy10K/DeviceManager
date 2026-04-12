@@ -24,6 +24,12 @@
   grid-column: 1 / -1;
 }
 
+.description-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -46,6 +52,11 @@
 
   .actions {
     justify-content: stretch;
+  }
+
+  .description-actions {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .actions button {

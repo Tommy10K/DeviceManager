@@ -14,6 +14,7 @@ import {
   CreateDeviceRequest,
   Device,
   DeviceType,
+  GenerateDescriptionRequest,
 } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
@@ -38,6 +39,7 @@ export class DeviceFormComponent implements OnInit {
   isEditMode = false;
   isLoading = false;
   isSubmitting = false;
+  isGeneratingDescription = false;
   errorMessage = '';
   private deviceId: string | null = null;
   readonly form;
@@ -65,7 +67,7 @@ export class DeviceFormComponent implements OnInit {
       osVersion: ['', [Validators.required, Validators.maxLength(50)]],
       processor: ['', [Validators.required, Validators.maxLength(100)]],
       ramAmount: ['', [Validators.required, Validators.maxLength(50)]],
-      description: ['', [Validators.required]],
+      description: [''],
       assignedUserId: [''],
     });
   }
@@ -138,6 +140,46 @@ export class DeviceFormComponent implements OnInit {
     this.router.navigate(['/devices']);
   }
 
+  generateDescription(): void {
+    if (!this.isAdmin) {
+      return;
+    }
+
+    if (!this.areDescriptionInputsValid()) {
+      this.errorMessage = 'Fill in all technical fields before generating a description.';
+      this.errorStateService.setApiError(this.errorMessage);
+      return;
+    }
+
+    this.errorMessage = '';
+    this.isGeneratingDescription = true;
+    this.errorStateService.clearApiError();
+
+    const request = this.buildGenerateDescriptionRequest();
+
+    this.deviceService.generateDescription(request).subscribe({
+      next: (description) => {
+        this.form.controls.description.setValue(description);
+        this.form.controls.description.markAsDirty();
+
+        this.snackBar.open('Description generated.', 'Close', {
+          duration: 2500,
+        });
+      },
+      error: () => {
+        this.errorMessage = 'Failed to generate description.';
+        this.errorStateService.setApiError(this.errorMessage);
+
+        this.snackBar.open(this.errorMessage, 'Close', {
+          duration: 3000,
+        });
+      },
+      complete: () => {
+        this.isGeneratingDescription = false;
+      },
+    });
+  }
+
   private loadDeviceForEdit(id: string): void {
     this.isLoading = true;
     this.errorMessage = '';
@@ -182,8 +224,43 @@ export class DeviceFormComponent implements OnInit {
       osVersion: formValue.osVersion.trim(),
       processor: formValue.processor.trim(),
       ramAmount: formValue.ramAmount.trim(),
-      description: formValue.description.trim(),
+      description: formValue.description.trim() || null,
       assignedUserId: formValue.assignedUserId.trim() || null,
+    };
+  }
+
+  private areDescriptionInputsValid(): boolean {
+    const controls = this.form.controls;
+
+    controls.name.markAsTouched();
+    controls.manufacturer.markAsTouched();
+    controls.operatingSystem.markAsTouched();
+    controls.type.markAsTouched();
+    controls.ramAmount.markAsTouched();
+    controls.processor.markAsTouched();
+
+    return (
+      controls.name.valid &&
+      controls.manufacturer.valid &&
+      controls.operatingSystem.valid &&
+      controls.type.valid &&
+      controls.ramAmount.valid &&
+      controls.processor.valid
+    );
+  }
+
+  private buildGenerateDescriptionRequest(): GenerateDescriptionRequest {
+    const formValue = this.form.getRawValue();
+
+    const typeLabel = formValue.type === DeviceType.Phone ? 'Phone' : 'Tablet';
+
+    return {
+      name: formValue.name.trim(),
+      manufacturer: formValue.manufacturer.trim(),
+      operatingSystem: formValue.operatingSystem.trim(),
+      type: typeLabel,
+      ramAmount: formValue.ramAmount.trim(),
+      processor: formValue.processor.trim(),
     };
   }
 
