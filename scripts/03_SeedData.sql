@@ -1,6 +1,25 @@
 SET NOCOUNT ON;
 
 DECLARE @Now DATETIME2 = GETUTCDATE();
+DECLARE @AdminEmail NVARCHAR(256) = 'admin@test.com';
+DECLARE @AdminPasswordHash NVARCHAR(MAX) = 'AQAAAAIAAYagAAAAEJGWuQgwdOk3hmDUCL1CbYuzJR5quRQMMazJfjR9tNjJHENeA2pHyjvXD8xljhSpcA==';
+
+IF EXISTS (SELECT 1 FROM [Users] WHERE [Email] = @AdminEmail)
+BEGIN
+    UPDATE [Users]
+    SET
+        [Name] = 'System Admin',
+        [PasswordHash] = @AdminPasswordHash,
+        [Role] = 1,
+        [Location] = 'Head Office',
+        [UpdatedAt] = @Now
+    WHERE [Email] = @AdminEmail;
+END
+ELSE
+BEGIN
+    INSERT INTO [Users] ([Id], [Name], [Email], [PasswordHash], [Role], [Location], [CreatedAt], [UpdatedAt])
+    VALUES (NEWID(), 'System Admin', @AdminEmail, @AdminPasswordHash, 1, 'Head Office', @Now, @Now);
+END;
 
 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Email] = 'john.doe@example.com')
 BEGIN
