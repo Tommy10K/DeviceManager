@@ -6,7 +6,7 @@
 .app-shell {
 	background: #f5f6f8;
 	display: grid;
-	grid-template-rows: auto auto 1fr auto;
+	grid-template-rows: auto 1fr;
 	min-height: 100dvh;
 }
 
@@ -27,26 +27,9 @@
 	flex: 1 1 auto;
 }
 
-.role-chip {
-	background: rgba(255, 255, 255, 0.2);
-	border-radius: 12px;
-	font-size: 0.85rem;
-	padding: 0.15rem 0.6rem;
-}
-
 .user-name {
 	font-size: 0.9rem;
 	margin-right: 0.5rem;
-}
-
-.main-nav {
-	align-items: center;
-	background: #ffffff;
-	border-bottom: 1px solid #e2e2e2;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	padding: 0.5rem 1rem;
 }
 
 .active-link {
@@ -77,15 +60,6 @@
 	max-width: 1200px;
 }
 
-.app-footer {
-	background: #ffffff;
-	border-top: 1px solid #e2e2e2;
-	color: #666;
-	font-size: 0.9rem;
-	padding: 0.75rem 1rem;
-	text-align: center;
-}
-
 @media (max-width: 480px) {
 	.top-toolbar {
 		min-height: 56px;
@@ -93,10 +67,6 @@
 
 	.brand {
 		font-size: 1rem;
-	}
-
-	.main-nav {
-		padding: 0.5rem;
 	}
 
 	.page-content {

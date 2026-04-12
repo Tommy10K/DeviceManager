@@ -49,20 +49,12 @@ export class App {
     this.updatePageTitle();
   }
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
-  }
-
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }
 
   get currentUserName(): string {
     return this.authService.getCurrentUser()?.name ?? '';
-  }
-
-  get currentUserRole(): string {
-    return this.authService.getCurrentUser()?.role ?? '';
   }
 
   get apiError$() {
