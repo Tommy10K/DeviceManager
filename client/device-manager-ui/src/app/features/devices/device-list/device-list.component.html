@@ -1,6 +1,5 @@
 <section class="device-list-page">
   <header class="page-header">
-    <h1>Devices</h1>
     <button mat-raised-button color="primary" (click)="openCreateForm()" *ngIf="isAdmin">
       Add Device
     </button>
@@ -9,32 +8,36 @@
   <p class="role-note" *ngIf="isAdmin">Admin actions available: add, edit, and delete devices.</p>
   <p class="role-note" *ngIf="!isAdmin">User actions available: view, assign to self, and unassign own devices.</p>
 
-  <div class="search-row">
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Search devices</mat-label>
-      <input
-        matInput
-        [formControl]="searchControl"
-        placeholder="Search by name, manufacturer, processor, or RAM"
-      />
-    </mat-form-field>
-  </div>
+  <mat-card class="workspace-card">
+    <div class="search-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search devices</mat-label>
+        <input
+          matInput
+          [formControl]="searchControl"
+          placeholder="Search by name, manufacturer, processor, or RAM"
+        />
+      </mat-form-field>
+    </div>
 
-  <div class="loading" *ngIf="isLoading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+    <div class="loading" *ngIf="isLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
 
-  <div class="error-panel" *ngIf="!isLoading && errorMessage">
-    <p class="error">{{ errorMessage }}</p>
-    <button mat-button type="button" (click)="loadDevices()">Retry</button>
-  </div>
+    <div class="error-panel" *ngIf="!isLoading && errorMessage">
+      <p class="error">{{ errorMessage }}</p>
+      <button mat-button type="button" (click)="loadDevices()">Retry</button>
+    </div>
 
-  <p class="empty" *ngIf="!isLoading && !errorMessage && devices.length === 0">
-    {{ hasActiveSearch ? 'No results found.' : 'No devices found.' }}
-  </p>
+    <p class="empty" *ngIf="!isLoading && !errorMessage && devices.length === 0">
+      <ng-container *ngIf="hasActiveSearch; else noDevicesState">
+        No results found for "{{ searchControl.value.trim() }}".
+      </ng-container>
+      <ng-template #noDevicesState>No devices found.</ng-template>
+    </p>
 
-  <div class="table-wrapper" *ngIf="!isLoading && !errorMessage && devices.length > 0">
-    <table mat-table [dataSource]="devices" class="devices-table">
+    <div class="table-wrapper" *ngIf="!isLoading && !errorMessage && devices.length > 0">
+      <table mat-table [dataSource]="devices" class="devices-table">
       <ng-container matColumnDef="tag">
         <th mat-header-cell *matHeaderCellDef>Tag</th>
         <td mat-cell *matCellDef="let device">{{ device.tag }}</td>
@@ -52,7 +55,14 @@
 
       <ng-container matColumnDef="type">
         <th mat-header-cell *matHeaderCellDef>Type</th>
-        <td mat-cell *matCellDef="let device">{{ getTypeLabel(device.type) }}</td>
+        <td mat-cell *matCellDef="let device">
+          <mat-chip
+            class="type-chip"
+            [class.type-chip-tablet]="device.type === deviceType.Tablet"
+          >
+            {{ getTypeLabel(device.type) }}
+          </mat-chip>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="operatingSystem">
@@ -62,57 +72,62 @@
 
       <ng-container matColumnDef="assignedUser">
         <th mat-header-cell *matHeaderCellDef>Assigned User</th>
-        <td mat-cell *matCellDef="let device">{{ getAssignedUserLabel(device) }}</td>
+        <td mat-cell *matCellDef="let device">
+          <mat-chip class="status-chip status-chip-unassigned" *ngIf="!device.assignedUserId">
+            Unassigned
+          </mat-chip>
+          <mat-chip class="status-chip status-chip-assigned" *ngIf="device.assignedUserId">
+            In use by {{ device.assignedUser?.name || 'another user' }}
+          </mat-chip>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>Actions</th>
         <td mat-cell *matCellDef="let device" class="actions-cell">
-          <button mat-button type="button" (click)="openDetails(device.id); $event.stopPropagation()">
-            View
-          </button>
-          <button
-            mat-button
-            type="button"
-            color="primary"
-            *ngIf="isAdmin"
-            (click)="openEdit(device.id, $event)"
-          >
-            Edit
-          </button>
-          <button
-            mat-button
-            color="warn"
-            type="button"
-            *ngIf="isAdmin"
-            (click)="confirmDelete(device, $event)"
-          >
-            Delete
-          </button>
+          <div class="actions-group">
+            <button mat-stroked-button type="button" (click)="openDetails(device.id); $event.stopPropagation()">
+              View
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              color="primary"
+              *ngIf="isAdmin"
+              (click)="openEdit(device.id, $event)"
+            >
+              Edit
+            </button>
+            <button
+              mat-stroked-button
+              color="warn"
+              type="button"
+              *ngIf="isAdmin"
+              (click)="confirmDelete(device, $event)"
+            >
+              Delete
+            </button>
 
-          <button
-            mat-button
-            type="button"
-            color="primary"
-            *ngIf="canAssign(device)"
-            (click)="assignToMe(device, $event)"
-          >
-            Assign to me
-          </button>
+            <button
+              mat-flat-button
+              type="button"
+              color="primary"
+              *ngIf="canAssign(device)"
+              (click)="assignToMe(device, $event)"
+            >
+              Assign to me
+            </button>
 
-          <button
-            mat-button
-            type="button"
-            color="primary"
-            *ngIf="canUnassign(device)"
-            (click)="unassign(device, $event)"
-          >
-            Unassign
-          </button>
-
-          <span class="in-use-label" *ngIf="isAssignedToOtherUser(device)">
-            In use by {{ device.assignedUser?.name || 'another user' }}
-          </span>
+            <button
+              mat-stroked-button
+              type="button"
+              color="primary"
+              *ngIf="canUnassign(device)"
+              (click)="unassign(device, $event)"
+            >
+              Unassign
+            </button>
+          </div>
         </td>
       </ng-container>
 
@@ -123,6 +138,7 @@
         (click)="openDetails(row.id)"
         class="clickable-row"
       ></tr>
-    </table>
-  </div>
+      </table>
+    </div>
+  </mat-card>
 </section>

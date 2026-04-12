@@ -9,23 +9,31 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 0.75rem;
-}
-
-.page-header h1 {
-  margin: 0;
 }
 
 .role-note {
   margin: 0 0 1rem;
 }
 
+.workspace-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+}
+
 .search-row {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .search-field {
+  --mdc-outlined-text-field-container-color: #ffffff;
+  --mdc-outlined-text-field-outline-color: #c9cfd7;
+  --mdc-outlined-text-field-hover-outline-color: #b2bac5;
+  --mdc-outlined-text-field-focus-outline-color: #6b7280;
+  --mdc-outlined-text-field-container-shape: 8px;
   max-width: 460px;
   width: 100%;
 }
@@ -62,7 +70,35 @@
 
 .devices-table .mat-mdc-header-cell,
 .devices-table .mat-mdc-cell {
+  vertical-align: middle;
   white-space: nowrap;
+}
+
+.type-chip,
+.status-chip {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  min-height: 28px;
+}
+
+.type-chip {
+  background: #e7f1ff;
+  color: #114a8b;
+}
+
+.type-chip-tablet {
+  background: #edf4ea;
+  color: #27511f;
+}
+
+.status-chip-unassigned {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.status-chip-assigned {
+  background: #e6f6ea;
+  color: #1c6c2d;
 }
 
 .clickable-row {
@@ -70,16 +106,17 @@
 }
 
 .actions-cell {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+  padding-bottom: 12px;
+  padding-top: 12px;
+  vertical-align: middle;
   white-space: nowrap;
 }
 
-.in-use-label {
-  color: #555;
-  font-size: 0.85rem;
+.actions-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 @media (max-width: 1024px) {
@@ -92,15 +129,7 @@
   }
 }
 
-@media (max-width: 480px) {
-  .page-header {
-    align-items: stretch;
-  }
-
-  .page-header button {
-    width: 100%;
-  }
-
+@media (max-width: 900px) {
   .error-panel {
     align-items: flex-start;
     flex-direction: column;
