@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import {
   CreateDeviceRequest,
   Device,
+  GenerateDescriptionRequest,
   UpdateDeviceRequest,
 } from '../models/device.model';
 import { environment } from '../../../environments/environment';
@@ -41,5 +42,23 @@ export class DeviceService {
 
   unassign(id: string): Observable<Device> {
     return this.http.post<Device>(`${this.apiUrl}/${id}/unassign`, {});
+  }
+
+  generateDescription(request: GenerateDescriptionRequest): Observable<string> {
+    return this.http
+      .post(`${this.apiUrl}/generate-description`, request, {
+        observe: 'response',
+        responseType: 'text' as const,
+      })
+      .pipe(map((response) => response.body ?? ''));
+  }
+
+  generateDescriptionForDevice(id: string): Observable<string> {
+    return this.http
+      .post(`${this.apiUrl}/${id}/generate-description`, {}, {
+        observe: 'response',
+        responseType: 'text' as const,
+      })
+      .pipe(map((response) => response.body ?? ''));
   }
 }

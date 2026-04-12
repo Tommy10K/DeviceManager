@@ -16,6 +16,15 @@
       <h1>{{ device.name }}</h1>
       <div class="actions">
         <button mat-button type="button" (click)="goBack()">Back</button>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="generateDescription()"
+          [disabled]="isGeneratingDescription"
+        >
+          Generate AI Description
+        </button>
         <button mat-raised-button color="primary" type="button" *ngIf="isAdmin" (click)="goToEdit()">
           Edit
         </button>
@@ -29,6 +38,13 @@
     <p><strong>Processor:</strong> {{ device.processor }}</p>
     <p><strong>RAM:</strong> {{ device.ramAmount }}</p>
     <p><strong>Description:</strong> {{ device.description || 'No description' }}</p>
+    <p class="error" *ngIf="generatedDescriptionError">{{ generatedDescriptionError }}</p>
+
+    <section class="generated-description" *ngIf="generatedDescription">
+      <h2>AI Generated Description</h2>
+      <p>{{ generatedDescription }}</p>
+    </section>
+
     <p><strong>Assigned User:</strong> {{ device.assignedUser?.name || 'Unassigned' }}</p>
   </div>
 </section>

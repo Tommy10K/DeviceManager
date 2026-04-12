@@ -75,10 +75,21 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Description</mat-label>
       <textarea matInput formControlName="description" rows="4"></textarea>
-      <mat-error *ngIf="form.controls.description.touched && form.controls.description.hasError('required')">
-        Description is required.
-      </mat-error>
     </mat-form-field>
+
+    <div class="description-actions full-width">
+      <button
+        mat-stroked-button
+        type="button"
+        color="primary"
+        (click)="generateDescription()"
+        [disabled]="isGeneratingDescription || isSubmitting"
+      >
+        Generate Description with AI
+      </button>
+
+      <mat-spinner *ngIf="isGeneratingDescription" diameter="20"></mat-spinner>
+    </div>
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Assigned User Id (optional)</mat-label>
@@ -89,7 +100,7 @@
 
     <div class="actions full-width">
       <button mat-button type="button" (click)="cancel()">Cancel</button>
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting || isGeneratingDescription">
         {{ isEditMode ? 'Update Device' : 'Create Device' }}
       </button>
     </div>

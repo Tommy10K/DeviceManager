@@ -113,6 +113,63 @@ public sealed class DevicesControllerTests : IClassFixture<CustomWebApplicationF
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GenerateDescriptionFromSpecs_Returns200_WithNonEmptyText()
+    {
+        var session = await RegisterAndLoginAsync("description-specs-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        var request = new GenerateDescriptionRequest(
+            Name: "Pixel Pro",
+            Manufacturer: "Google",
+            OperatingSystem: "Android",
+            Type: "Phone",
+            RamAmount: "12GB",
+            Processor: "Tensor G4");
+
+        var response = await authenticatedClient.PostAsJsonAsync("/api/devices/generate-description", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var description = await response.Content.ReadAsStringAsync();
+        Assert.False(string.IsNullOrWhiteSpace(description));
+        Assert.Contains("Pixel Pro", description, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GenerateDescriptionForExistingDevice_Returns200_WithNonEmptyText()
+    {
+        var session = await RegisterAndLoginAsync("description-device-user");
+        var deviceId = await SeedDeviceAsync($"AI-DETAIL-{Guid.NewGuid():N}", assignedUserId: null);
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        var response = await authenticatedClient.PostAsJsonAsync($"/api/devices/{deviceId}/generate-description", new { });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var description = await response.Content.ReadAsStringAsync();
+        Assert.False(string.IsNullOrWhiteSpace(description));
+        Assert.Contains("Integration Device", description, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GenerateDescriptionFromSpecs_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+
+        var request = new GenerateDescriptionRequest(
+            Name: "Galaxy S",
+            Manufacturer: "Samsung",
+            OperatingSystem: "Android",
+            Type: "Phone",
+            RamAmount: "8GB",
+            Processor: "Snapdragon");
+
+        var response = await client.PostAsJsonAsync("/api/devices/generate-description", request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     private HttpClient CreateAuthenticatedClient(string token)
     {
         var client = _factory.CreateClient();

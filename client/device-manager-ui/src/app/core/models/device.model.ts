@@ -34,3 +34,12 @@ export interface CreateDeviceRequest {
 }
 
 export type UpdateDeviceRequest = CreateDeviceRequest;
+
+export interface GenerateDescriptionRequest {
+  name: string;
+  manufacturer: string;
+  operatingSystem: string;
+  type: string;
+  ramAmount: string;
+  processor: string;
+}

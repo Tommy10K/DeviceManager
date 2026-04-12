@@ -19,8 +19,11 @@ import { ErrorStateService } from '../../../core/services/error-state.service';
 export class DeviceDetailComponent implements OnInit {
   device: Device | null = null;
   isLoading = true;
+  isGeneratingDescription = false;
   notFound = false;
   errorMessage = '';
+  generatedDescription = '';
+  generatedDescriptionError = '';
 
   readonly currentUserRole: 'Admin' | 'User' = 'Admin';
 
@@ -65,6 +68,31 @@ export class DeviceDetailComponent implements OnInit {
     }
 
     this.router.navigate(['/devices', this.device.id, 'edit']);
+  }
+
+  generateDescription(): void {
+    if (!this.device) {
+      return;
+    }
+
+    this.generatedDescriptionError = '';
+    this.isGeneratingDescription = true;
+
+    this.deviceService.generateDescriptionForDevice(this.device.id).subscribe({
+      next: (description) => {
+        const generatedText = typeof description === 'string' ? description : String(description);
+
+        this.generatedDescription = generatedText.trim() || 'No generated description was returned.';
+        this.isGeneratingDescription = false;
+      },
+      error: () => {
+        this.generatedDescriptionError = 'Failed to generate description.';
+        this.isGeneratingDescription = false;
+      },
+      complete: () => {
+        this.isGeneratingDescription = false;
+      },
+    });
   }
 
   private loadDevice(deviceId: string): void {

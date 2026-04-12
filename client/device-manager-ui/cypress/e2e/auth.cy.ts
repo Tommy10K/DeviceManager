@@ -1,3 +1,7 @@
+/// <reference types="cypress" />
+
+export {};
+
 const encodeBase64Url = (value: string): string =>
   Cypress.Buffer.from(value)
     .toString('base64')
@@ -38,5 +42,43 @@ describe('Auth route guards', () => {
     cy.wait('@getDevices');
     cy.contains('h1', 'Devices').should('be.visible');
     cy.contains('button', 'Add Device').should('not.exist');
+  });
+
+  it('allows authenticated user to generate AI description from details page', () => {
+    const token = createToken('User');
+    const deviceId = '00000000-0000-0000-0000-000000000123';
+
+    cy.intercept('GET', `**/api/devices/${deviceId}`, {
+      statusCode: 200,
+      body: {
+        id: deviceId,
+        tag: 'TAG-DETAIL-001',
+        name: 'Review Device',
+        manufacturer: 'Acme',
+        type: 0,
+        operatingSystem: 'Android',
+        osVersion: '14',
+        processor: 'Tensor',
+        ramAmount: '8GB',
+        description: null,
+        assignedUserId: null,
+        assignedUser: null,
+      },
+    }).as('getDeviceById');
+
+    cy.intercept('POST', `**/api/devices/${deviceId}/generate-description`, {
+      statusCode: 200,
+      body: 'Generated for user decision support.',
+    }).as('generateDescriptionForDevice');
+
+    cy.visit(`/devices/${deviceId}`, {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('device_manager_token', token);
+      },
+    });
+
+    cy.wait('@getDeviceById');
+    cy.contains('button', 'Generate AI Description').click();
+    cy.wait('@generateDescriptionForDevice').its('response.statusCode').should('eq', 200);
   });
 });
