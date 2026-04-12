@@ -3,6 +3,7 @@ using DeviceManager.Application.DTOs;
 using DeviceManager.Application.Exceptions;
 using DeviceManager.Application.Interfaces;
 using DeviceManager.Domain.Entities;
+using DeviceManager.Domain.Enums;
 
 namespace DeviceManager.Application.Services;
 
@@ -36,13 +37,23 @@ public sealed class DeviceService : IDeviceService
             return await GetAllDevicesAsync();
         }
 
+        var devices = await _deviceRepository.GetAllAsync();
+
+        var exactTagMatches = devices
+            .Where(device => string.Equals(NormalizeQuery(device.Tag), normalizedQuery, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (exactTagMatches.Count > 0)
+        {
+            return _mapper.Map<List<DeviceDto>>(exactTagMatches);
+        }
+
         var tokens = TokenizeQuery(normalizedQuery);
         if (tokens.Count == 0)
         {
             return await GetAllDevicesAsync();
         }
 
-        var devices = await _deviceRepository.GetAllAsync();
         var scoredDevices = new List<ScoredDevice>();
 
         foreach (var device in devices)
@@ -236,6 +247,11 @@ public sealed class DeviceService : IDeviceService
 
         foreach (var token in tokens)
         {
+            if (device.Tag.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 30;
+            }
+
             if (device.Name.Contains(token, StringComparison.OrdinalIgnoreCase))
             {
                 score += 20;
@@ -255,9 +271,39 @@ public sealed class DeviceService : IDeviceService
             {
                 score += 2;
             }
+
+            if (device.OperatingSystem.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 8;
+            }
+
+            if (device.OSVersion.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 4;
+            }
+
+            if (IsMatchingDeviceTypeToken(token, device.Type))
+            {
+                score += 12;
+            }
         }
 
         return score;
+    }
+
+    private static bool IsMatchingDeviceTypeToken(string token, DeviceType deviceType)
+    {
+        if (deviceType == DeviceType.Phone)
+        {
+            return token is "phone" or "phones";
+        }
+
+        if (deviceType == DeviceType.Tablet)
+        {
+            return token is "tablet" or "tablets";
+        }
+
+        return false;
     }
 
     private static string NormalizeQuery(string query)
