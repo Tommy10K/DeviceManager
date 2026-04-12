@@ -1,5 +1,6 @@
 using DeviceManager.Application.Interfaces;
 using DeviceManager.Domain.Entities;
+using DeviceManager.Infrastructure.AI;
 using DeviceManager.Infrastructure.Persistence;
 using DeviceManager.Infrastructure.Repositories;
 using DeviceManager.Infrastructure.Security;
@@ -25,12 +26,14 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString));
 
         services.Configure<JwtSettings>(config.GetSection(JwtSettings.SectionName));
+        services.Configure<GeminiSettings>(config.GetSection(GeminiSettings.SectionName));
 
         services.AddScoped<IDeviceRepository, DeviceRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddHttpClient<IDescriptionGenerator, GeminiDescriptionGenerator>();
 
         return services;
     }
