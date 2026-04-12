@@ -28,6 +28,16 @@ public sealed class DeviceService : IDeviceService
         return _mapper.Map<List<DeviceDto>>(devices);
     }
 
+    public async Task<List<DeviceDto>> SearchDevicesAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return await GetAllDevicesAsync();
+        }
+
+        return await GetAllDevicesAsync();
+    }
+
     public async Task<DeviceDto> GetDeviceByIdAsync(Guid id)
     {
         var device = await _deviceRepository.GetByIdAsync(id);

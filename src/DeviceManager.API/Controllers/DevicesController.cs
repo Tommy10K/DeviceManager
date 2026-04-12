@@ -37,6 +37,18 @@ public sealed class DevicesController : ControllerBase
     }
 
     /// <summary>
+    /// Searches devices using a free-text query.
+    /// </summary>
+    /// <param name="q">Search query.</param>
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(IEnumerable<DeviceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<DeviceDto>>> Search([FromQuery] string q)
+    {
+        var devices = await _deviceService.SearchDevicesAsync(q);
+        return Ok(devices);
+    }
+
+    /// <summary>
     /// Returns a single device by identifier.
     /// </summary>
     /// <param name="id">Device identifier.</param>
