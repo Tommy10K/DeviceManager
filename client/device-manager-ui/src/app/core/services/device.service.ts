@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import {
@@ -18,6 +18,11 @@ export class DeviceService {
 
   getAll(): Observable<Device[]> {
     return this.http.get<Device[]>(this.apiUrl);
+  }
+
+  search(query: string): Observable<Device[]> {
+    const params = new HttpParams().set('q', query);
+    return this.http.get<Device[]>(`${this.apiUrl}/search`, { params });
   }
 
   getById(id: string): Observable<Device> {

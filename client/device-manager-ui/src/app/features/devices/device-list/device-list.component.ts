@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
+import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 
 import { Device, DeviceType } from '../../../core/models/device.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -20,8 +24,11 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
     MatProgressSpinnerModule,
     MatTableModule,
   ],
@@ -32,6 +39,8 @@ export class DeviceListComponent implements OnInit {
   devices: Device[] = [];
   isLoading = true;
   errorMessage = '';
+  readonly searchControl = new FormControl('', { nonNullable: true });
+  private searchSubscription: Subscription | null = null;
 
   readonly displayedColumns: string[] = [
     'tag',
@@ -52,7 +61,20 @@ export class DeviceListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.searchSubscription = this.searchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+      )
+      .subscribe((query) => {
+        this.loadDevices(query);
+      });
+
     this.loadDevices();
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubscription?.unsubscribe();
   }
 
   get isAdmin(): boolean {
@@ -63,12 +85,21 @@ export class DeviceListComponent implements OnInit {
     return this.authService.getCurrentUser()?.id ?? null;
   }
 
-  loadDevices(): void {
+  get hasActiveSearch(): boolean {
+    return this.searchControl.value.trim().length > 0;
+  }
+
+  loadDevices(query?: string): void {
     this.isLoading = true;
     this.errorMessage = '';
     this.errorStateService.clearApiError();
 
-    this.deviceService.getAll().subscribe({
+    const effectiveQuery = (query ?? this.searchControl.value).trim();
+    const request = effectiveQuery.length === 0
+      ? this.deviceService.getAll()
+      : this.deviceService.search(effectiveQuery);
+
+    request.subscribe({
       next: (devices) => {
         this.devices = devices;
         this.isLoading = false;
