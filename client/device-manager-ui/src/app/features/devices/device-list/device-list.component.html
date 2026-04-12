@@ -9,6 +9,17 @@
   <p class="role-note" *ngIf="isAdmin">Admin actions available: add, edit, and delete devices.</p>
   <p class="role-note" *ngIf="!isAdmin">User actions available: view, assign to self, and unassign own devices.</p>
 
+  <div class="search-row">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search devices</mat-label>
+      <input
+        matInput
+        [formControl]="searchControl"
+        placeholder="Search by name, manufacturer, processor, or RAM"
+      />
+    </mat-form-field>
+  </div>
+
   <div class="loading" *ngIf="isLoading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
@@ -19,7 +30,7 @@
   </div>
 
   <p class="empty" *ngIf="!isLoading && !errorMessage && devices.length === 0">
-    No devices found.
+    {{ hasActiveSearch ? 'No results found.' : 'No devices found.' }}
   </p>
 
   <div class="table-wrapper" *ngIf="!isLoading && !errorMessage && devices.length > 0">

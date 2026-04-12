@@ -170,6 +170,85 @@ public sealed class DevicesControllerTests : IClassFixture<CustomWebApplicationF
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Search_ExactPhraseBoost_RanksExactNameFirst()
+    {
+        var session = await RegisterAndLoginAsync("search-exact-phrase-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        await SeedSearchDevicesAsync(
+            new SearchSeedDevice("SRCH-EXACT-1", "iPhone 15 Pro", "Apple", "A17 Pro", "8GB"),
+            new SearchSeedDevice("SRCH-EXACT-2", "iPhone Budget", "Generic", "Series 15", "4GB"));
+
+        var devices = await SearchDevicesAsync(authenticatedClient, "iPhone 15");
+
+        Assert.NotEmpty(devices);
+        Assert.Equal("SRCH-EXACT-1", devices[0].Tag);
+    }
+
+    [Fact]
+    public async Task Search_AppleQuery_PrioritizesNameMatchOverManufacturerMatch()
+    {
+        var session = await RegisterAndLoginAsync("search-apple-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        await SeedSearchDevicesAsync(
+            new SearchSeedDevice("SRCH-APPLE-1", "Apple Enterprise Phone", "Contoso", "A17", "8GB"),
+            new SearchSeedDevice("SRCH-APPLE-2", "Enterprise Phone", "Apple", "Snapdragon", "8GB"));
+
+        var devices = await SearchDevicesAsync(authenticatedClient, "Apple");
+
+        Assert.NotEmpty(devices);
+        Assert.Equal("SRCH-APPLE-1", devices[0].Tag);
+    }
+
+    [Fact]
+    public async Task Search_16GbSamsung_RanksMostRelevantDeviceFirst()
+    {
+        var session = await RegisterAndLoginAsync("search-samsung-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        await SeedSearchDevicesAsync(
+            new SearchSeedDevice("SRCH-SAM-16", "Business Galaxy", "Samsung", "Exynos", "16GB"),
+            new SearchSeedDevice("SRCH-SAM-8", "Galaxy Lite", "Samsung", "Exynos", "8GB"),
+            new SearchSeedDevice("SRCH-OTHER-16", "Office Tab", "Lenovo", "Snapdragon", "16GB"));
+
+        var devices = await SearchDevicesAsync(authenticatedClient, "16GB Samsung");
+
+        Assert.NotEmpty(devices);
+        Assert.Equal("SRCH-SAM-16", devices[0].Tag);
+    }
+
+    [Fact]
+    public async Task Search_MixedCaseAndExtraSpaces_ReturnsExpectedRanking()
+    {
+        var session = await RegisterAndLoginAsync("search-normalization-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        await SeedSearchDevicesAsync(
+            new SearchSeedDevice("SRCH-NORM-1", "Apple Enterprise Phone", "Contoso", "A17", "8GB"),
+            new SearchSeedDevice("SRCH-NORM-2", "Enterprise Phone", "Apple", "Snapdragon", "8GB"));
+
+        var devices = await SearchDevicesAsync(authenticatedClient, "   aPPLe   ");
+
+        Assert.NotEmpty(devices);
+        Assert.Equal("SRCH-NORM-1", devices[0].Tag);
+    }
+
+    [Fact]
+    public async Task Search_NonExistentQuery_ReturnsEmptyList()
+    {
+        var session = await RegisterAndLoginAsync("search-empty-user");
+        var authenticatedClient = CreateAuthenticatedClient(session.Token);
+
+        await SeedSearchDevicesAsync(
+            new SearchSeedDevice("SRCH-EMPTY-1", "Corporate Device", "Contoso", "Tensor", "8GB"));
+
+        var devices = await SearchDevicesAsync(authenticatedClient, "nonexistent-zzzz");
+
+        Assert.Empty(devices);
+    }
+
     private HttpClient CreateAuthenticatedClient(string token)
     {
         var client = _factory.CreateClient();
@@ -252,5 +331,53 @@ public sealed class DevicesControllerTests : IClassFixture<CustomWebApplicationF
             AssignedUserId: null);
     }
 
+    private async Task<List<DeviceDto>> SearchDevicesAsync(HttpClient client, string query)
+    {
+        var encodedQuery = Uri.EscapeDataString(query);
+        var response = await client.GetAsync($"/api/devices/search?q={encodedQuery}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var devices = await response.Content.ReadFromJsonAsync<List<DeviceDto>>();
+        Assert.NotNull(devices);
+
+        return devices!;
+    }
+
+    private async Task SeedSearchDevicesAsync(params SearchSeedDevice[] devices)
+    {
+        await _factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            foreach (var device in devices)
+            {
+                dbContext.Devices.Add(new Device
+                {
+                    Id = Guid.NewGuid(),
+                    Tag = device.Tag,
+                    Name = device.Name,
+                    Manufacturer = device.Manufacturer,
+                    Type = DeviceType.Phone,
+                    OperatingSystem = "Android",
+                    OSVersion = "14",
+                    Processor = device.Processor,
+                    RamAmount = device.RamAmount,
+                    Description = null,
+                    AssignedUserId = null,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+
+            await dbContext.SaveChangesAsync();
+        });
+    }
+
     private sealed record TestUserSession(Guid UserId, string Token);
+
+    private sealed record SearchSeedDevice(
+        string Tag,
+        string Name,
+        string Manufacturer,
+        string Processor,
+        string RamAmount);
 }
