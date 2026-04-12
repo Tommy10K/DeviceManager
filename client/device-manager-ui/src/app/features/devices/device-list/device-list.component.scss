@@ -29,6 +29,11 @@
 }
 
 .search-field {
+  --mdc-outlined-text-field-container-color: #ffffff;
+  --mdc-outlined-text-field-outline-color: #c9cfd7;
+  --mdc-outlined-text-field-hover-outline-color: #b2bac5;
+  --mdc-outlined-text-field-focus-outline-color: #6b7280;
+  --mdc-outlined-text-field-container-shape: 8px;
   max-width: 460px;
   width: 100%;
 }
@@ -65,6 +70,7 @@
 
 .devices-table .mat-mdc-header-cell,
 .devices-table .mat-mdc-cell {
+  vertical-align: middle;
   white-space: nowrap;
 }
 
@@ -100,11 +106,17 @@
 }
 
 .actions-cell {
+  padding-bottom: 12px;
+  padding-top: 12px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.actions-group {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  white-space: nowrap;
 }
 
 @media (max-width: 1024px) {
@@ -117,15 +129,7 @@
   }
 }
 
-@media (max-width: 480px) {
-  .page-header {
-    align-items: stretch;
-  }
-
-  .page-header button {
-    width: 100%;
-  }
-
+@media (max-width: 900px) {
   .error-panel {
     align-items: flex-start;
     flex-direction: column;
