@@ -6,6 +6,8 @@ public interface IDeviceService
 {
     Task<List<DeviceDto>> GetAllDevicesAsync();
 
+    Task<List<DeviceDto>> SearchDevicesAsync(string query);
+
     Task<DeviceDto> GetDeviceByIdAsync(Guid id);
 
     Task<DeviceDto> CreateDeviceAsync(CreateDeviceRequest request);

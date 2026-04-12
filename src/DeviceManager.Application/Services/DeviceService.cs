@@ -28,6 +28,43 @@ public sealed class DeviceService : IDeviceService
         return _mapper.Map<List<DeviceDto>>(devices);
     }
 
+    public async Task<List<DeviceDto>> SearchDevicesAsync(string query)
+    {
+        var normalizedQuery = NormalizeQuery(query);
+        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            return await GetAllDevicesAsync();
+        }
+
+        var tokens = TokenizeQuery(normalizedQuery);
+        if (tokens.Count == 0)
+        {
+            return await GetAllDevicesAsync();
+        }
+
+        var devices = await _deviceRepository.GetAllAsync();
+        var scoredDevices = new List<ScoredDevice>();
+
+        foreach (var device in devices)
+        {
+            var score = CalculateSearchScore(device, normalizedQuery, tokens);
+            if (score <= 0)
+            {
+                continue;
+            }
+
+            scoredDevices.Add(new ScoredDevice(device, score));
+        }
+
+        var rankedDevices = scoredDevices
+            .OrderByDescending(item => item.Score)
+            .ThenBy(item => item.Device.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(item => item.Device)
+            .ToList();
+
+        return _mapper.Map<List<DeviceDto>>(rankedDevices);
+    }
+
     public async Task<DeviceDto> GetDeviceByIdAsync(Guid id)
     {
         var device = await _deviceRepository.GetByIdAsync(id);
@@ -187,4 +224,62 @@ public sealed class DeviceService : IDeviceService
 
         return user;
     }
+
+    private static int CalculateSearchScore(Device device, string normalizedQuery, List<string> tokens)
+    {
+        var score = 0;
+
+        if (device.Name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+        {
+            score += 50;
+        }
+
+        foreach (var token in tokens)
+        {
+            if (device.Name.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 20;
+            }
+
+            if (device.Manufacturer.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 10;
+            }
+
+            if (device.Processor.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 5;
+            }
+
+            if (device.RamAmount.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 2;
+            }
+        }
+
+        return score;
+    }
+
+    private static string NormalizeQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return string.Empty;
+        }
+
+        var parts = query
+            .Trim()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return string.Join(' ', parts).ToLowerInvariant();
+    }
+
+    private static List<string> TokenizeQuery(string normalizedQuery)
+    {
+        return normalizedQuery
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+    }
+
+    private sealed record ScoredDevice(Device Device, int Score);
 }
