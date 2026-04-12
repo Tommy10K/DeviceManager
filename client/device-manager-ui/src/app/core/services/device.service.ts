@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import {
   CreateDeviceRequest,
@@ -45,10 +45,20 @@ export class DeviceService {
   }
 
   generateDescription(request: GenerateDescriptionRequest): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/generate-description`, request);
+    return this.http
+      .post(`${this.apiUrl}/generate-description`, request, {
+        observe: 'response',
+        responseType: 'text' as const,
+      })
+      .pipe(map((response) => response.body ?? ''));
   }
 
   generateDescriptionForDevice(id: string): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/${id}/generate-description`, {});
+    return this.http
+      .post(`${this.apiUrl}/${id}/generate-description`, {}, {
+        observe: 'response',
+        responseType: 'text' as const,
+      })
+      .pipe(map((response) => response.body ?? ''));
   }
 }

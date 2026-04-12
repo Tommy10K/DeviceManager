@@ -1,3 +1,4 @@
+using DeviceManager.Application.Interfaces;
 using DeviceManager.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -22,6 +23,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
             services.RemoveAll(typeof(IDbContextOptionsConfiguration<AppDbContext>));
             services.RemoveAll(typeof(AppDbContext));
+            services.RemoveAll(typeof(IDescriptionGenerator));
 
             _sqliteConnection = new SqliteConnection("Data Source=:memory:");
             _sqliteConnection.Open();
@@ -30,6 +32,8 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseSqlite(_sqliteConnection);
             });
+
+            services.AddScoped<IDescriptionGenerator, FakeDescriptionGenerator>();
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -71,5 +75,16 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         return await operation(dbContext);
+    }
+
+    private sealed class FakeDescriptionGenerator : IDescriptionGenerator
+    {
+        public Task<string> GenerateDescriptionAsync(DeviceSpecifications specs)
+        {
+            var description =
+                $"Generated description for {specs.Name} by {specs.Manufacturer} using {specs.Processor}.";
+
+            return Task.FromResult(description);
+        }
     }
 }

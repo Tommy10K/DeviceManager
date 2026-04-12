@@ -80,10 +80,14 @@ export class DeviceDetailComponent implements OnInit {
 
     this.deviceService.generateDescriptionForDevice(this.device.id).subscribe({
       next: (description) => {
-        this.generatedDescription = description;
+        const generatedText = typeof description === 'string' ? description : String(description);
+
+        this.generatedDescription = generatedText.trim() || 'No generated description was returned.';
+        this.isGeneratingDescription = false;
       },
       error: () => {
         this.generatedDescriptionError = 'Failed to generate description.';
+        this.isGeneratingDescription = false;
       },
       complete: () => {
         this.isGeneratingDescription = false;

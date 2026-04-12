@@ -159,8 +159,11 @@ export class DeviceFormComponent implements OnInit {
 
     this.deviceService.generateDescription(request).subscribe({
       next: (description) => {
-        this.form.controls.description.setValue(description);
+        const generatedText = typeof description === 'string' ? description : String(description);
+
+        this.form.controls.description.setValue(generatedText);
         this.form.controls.description.markAsDirty();
+        this.isGeneratingDescription = false;
 
         this.snackBar.open('Description generated.', 'Close', {
           duration: 2500,
@@ -169,6 +172,7 @@ export class DeviceFormComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Failed to generate description.';
         this.errorStateService.setApiError(this.errorMessage);
+        this.isGeneratingDescription = false;
 
         this.snackBar.open(this.errorMessage, 'Close', {
           duration: 3000,

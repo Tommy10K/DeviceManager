@@ -1,3 +1,7 @@
+/// <reference types="cypress" />
+
+export {};
+
 type DeviceType = 0 | 1;
 
 interface User {
@@ -95,6 +99,16 @@ describe('Devices CRUD flow', () => {
       req.reply({ statusCode: 201, body: newDevice });
     }).as('createDevice');
 
+    cy.intercept('POST', '**/api/devices/generate-description', {
+      statusCode: 200,
+      body: 'AI generated description for create or edit flow.',
+    }).as('generateDescriptionFromSpecs');
+
+    cy.intercept('POST', '**/api/devices/*/generate-description', {
+      statusCode: 200,
+      body: 'AI generated description for detail view.',
+    }).as('generateDescriptionForDevice');
+
     cy.intercept('DELETE', '**/api/devices/*', (req) => {
       const id = req.url.split('/').pop() as string;
       devices = devices.filter((item) => item.id !== id);
@@ -126,7 +140,10 @@ describe('Devices CRUD flow', () => {
     cy.get('input[formControlName="osVersion"]').type('15', { force: true });
     cy.get('input[formControlName="processor"]').type('Tensor', { force: true });
     cy.get('input[formControlName="ramAmount"]').type('12GB', { force: true });
-    cy.get('textarea[formControlName="description"]').type('Created during e2e test', { force: true });
+
+    cy.contains('button', 'Generate Description with AI').click();
+    cy.wait('@generateDescriptionFromSpecs');
+    cy.get('textarea[formControlName="description"]').should('have.value', 'AI generated description for create or edit flow.');
 
     cy.contains('button', 'Create Device').click();
     cy.wait('@createDevice');
@@ -154,5 +171,8 @@ describe('Devices CRUD flow', () => {
     cy.url().should('match', /\/devices\/[^/]+$/);
     cy.contains('h1', 'Starter Phone').should('be.visible');
     cy.contains('p', 'Tag: TAG-001').should('be.visible');
+
+    cy.contains('button', 'Generate AI Description').click();
+    cy.wait('@generateDescriptionForDevice').its('response.statusCode').should('eq', 200);
   });
 });
