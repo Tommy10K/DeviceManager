@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -26,6 +28,8 @@ import {
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
+    MatCardModule,
+    MatChipsModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
@@ -36,6 +40,7 @@ import {
   styleUrl: './device-list.component.scss',
 })
 export class DeviceListComponent implements OnInit {
+  readonly deviceType = DeviceType;
   devices: Device[] = [];
   isLoading = true;
   errorMessage = '';
@@ -159,20 +164,12 @@ export class DeviceListComponent implements OnInit {
     return type === DeviceType.Phone ? 'Phone' : 'Tablet';
   }
 
-  getAssignedUserLabel(device: Device): string {
-    return device.assignedUser?.name ?? 'Unassigned';
-  }
-
   canAssign(device: Device): boolean {
     return !this.isAdmin && !device.assignedUserId;
   }
 
   canUnassign(device: Device): boolean {
     return !this.isAdmin && !!this.currentUserId && device.assignedUserId === this.currentUserId;
-  }
-
-  isAssignedToOtherUser(device: Device): boolean {
-    return !!device.assignedUserId && device.assignedUserId !== this.currentUserId;
   }
 
   assignToMe(device: Device, event: Event): void {
