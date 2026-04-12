@@ -94,6 +94,14 @@ export class DeviceListComponent implements OnInit {
     return this.searchControl.value.trim().length > 0;
   }
 
+  isExactNameMatch(device: Device): boolean {
+    if (!this.hasActiveSearch) {
+      return false;
+    }
+
+    return this.normalizeForExactMatch(device.name) === this.normalizeForExactMatch(this.searchControl.value);
+  }
+
   loadDevices(query?: string): void {
     this.isLoading = true;
     this.errorMessage = '';
@@ -199,5 +207,13 @@ export class DeviceListComponent implements OnInit {
   openEdit(deviceId: string, event: Event): void {
     event.stopPropagation();
     this.router.navigate(['/devices', deviceId, 'edit']);
+  }
+
+  private normalizeForExactMatch(value: string): string {
+    return value
+      .trim()
+      .split(/\s+/)
+      .join(' ')
+      .toLowerCase();
   }
 }

@@ -137,6 +137,7 @@
         *matRowDef="let row; columns: displayedColumns"
         (click)="openDetails(row.id)"
         class="clickable-row"
+        [class.exact-name-match]="isExactNameMatch(row)"
       ></tr>
       </table>
     </div>

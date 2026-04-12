@@ -105,6 +105,14 @@
   cursor: pointer;
 }
 
+.clickable-row.exact-name-match .mat-mdc-cell {
+  background: #f6f9ff;
+}
+
+.clickable-row.exact-name-match .mat-mdc-cell:first-child {
+  box-shadow: inset 3px 0 0 #8bb8ff;
+}
+
 .actions-cell {
   padding-bottom: 12px;
   padding-top: 12px;
