@@ -93,7 +93,9 @@ export class DeviceDetailComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/devices', this.device.id, 'edit']);
+    this.router.navigate(['/devices', this.device.id, 'edit'], {
+      state: { device: this.device },
+    });
   }
 
   handleAssignmentAction(): void {

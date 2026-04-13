@@ -4,14 +4,17 @@
   padding: 1rem;
 }
 
-.page-header h1 {
-  margin: 0 0 1rem;
-}
-
 .loading {
   display: flex;
   justify-content: center;
   margin-top: 1.5rem;
+}
+
+.load-error {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-grid {

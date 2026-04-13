@@ -1,12 +1,14 @@
 <section class="device-list-page">
   <header class="page-header">
+    <div class="header-copy">
+      <p class="role-note" *ngIf="isAdmin">Admin actions available: add, edit, and delete devices.</p>
+      <p class="role-note" *ngIf="!isAdmin">User actions available: view, assign to self, and unassign own devices.</p>
+    </div>
+
     <button mat-raised-button color="primary" (click)="openCreateForm()" *ngIf="isAdmin">
       Add Device
     </button>
   </header>
-
-  <p class="role-note" *ngIf="isAdmin">Admin actions available: add, edit, and delete devices.</p>
-  <p class="role-note" *ngIf="!isAdmin">User actions available: view, assign to self, and unassign own devices.</p>
 
   <mat-card class="workspace-card">
     <div class="search-row">
@@ -94,7 +96,7 @@
               type="button"
               color="primary"
               *ngIf="isAdmin"
-              (click)="openEdit(device.id, $event)"
+              (click)="openEdit(device, $event)"
             >
               Edit
             </button>
