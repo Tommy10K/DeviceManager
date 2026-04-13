@@ -1,38 +1,87 @@
 .device-detail-page {
-  margin: 0 auto;
-  max-width: 900px;
-  padding: 1rem;
+  margin: 2rem auto;
+  max-width: 800px;
+  padding: 0 1rem;
 }
 
 .loading {
   display: flex;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
-.not-found,
-.details {
-  max-width: 720px;
+.state-card {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 1.25rem;
 }
 
-.page-header {
-  align-items: center;
+.details-card {
+  margin: 0 auto;
+  max-width: 800px;
+}
+
+.details-card mat-card-header {
+  margin-bottom: 0.75rem;
+}
+
+.spec-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0.75rem;
+}
+
+.spec-item {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
-.page-header h1 {
-  margin: 0;
+.spec-item-wide {
+  grid-column: 1 / -1;
 }
 
-.actions {
-  display: flex;
-  gap: 0.5rem;
+.spec-label {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-.details p {
-  margin: 0.35rem 0;
+.spec-value {
+  color: #1f2937;
+  overflow-wrap: anywhere;
+}
+
+.type-chip,
+.assignment-chip {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  min-height: 28px;
+  width: fit-content;
+}
+
+.type-chip {
+  background: #e7f1ff;
+  color: #114a8b;
+}
+
+.type-chip-tablet {
+  background: #edf4ea;
+  color: #27511f;
+}
+
+.assignment-chip {
+  background: #e6f6ea;
+  border-color: #b7e4c0;
+  color: #1c6c2d;
+}
+
+.assignment-chip-unassigned {
+  background: #f3f4f6;
+  border-color: #d8dde5;
+  color: #374151;
 }
 
 .generated-description {
@@ -56,28 +105,43 @@
   color: #b00020;
 }
 
+.error-state-card {
+  border: 1px solid #f2b5bb;
+}
+
+.card-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .device-detail-page {
-    padding: 0.75rem;
+    margin: 1rem auto;
+    padding: 0 0.75rem;
   }
 
-  .page-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.5rem;
+  .spec-grid {
+    grid-template-columns: 1fr;
   }
 
-  .actions {
-    width: 100%;
+  .spec-item-wide {
+    grid-column: auto;
   }
 
-  .actions button {
+  .card-actions-row {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .card-actions-row button {
     flex: 1 1 0;
   }
 }
 
 @media (max-width: 480px) {
   .device-detail-page {
-    padding: 0.5rem;
+    padding: 0 0.5rem;
   }
 }

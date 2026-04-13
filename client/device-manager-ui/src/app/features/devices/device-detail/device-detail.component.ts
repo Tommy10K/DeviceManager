@@ -2,18 +2,26 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Device, DeviceType } from '../../../core/models/device.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
 import { getApiErrorMessage } from '../../../core/utils/api-error-message';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-device-detail',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatButtonModule, MatCardModule, MatChipsModule, MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './device-detail.component.html',
   styleUrl: './device-detail.component.scss',
 })
@@ -23,15 +31,16 @@ export class DeviceDetailComponent implements OnInit {
   isGeneratingDescription = false;
   notFound = false;
   errorMessage = '';
+  assignmentError = '';
   generatedDescription = '';
   generatedDescriptionError = '';
-
-  readonly currentUserRole: 'Admin' | 'User' = 'Admin';
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
+    private readonly authService: AuthService,
     private readonly deviceService: DeviceService,
+    private readonly dialog: MatDialog,
     private readonly errorStateService: ErrorStateService,
   ) {}
 
@@ -48,7 +57,7 @@ export class DeviceDetailComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    return this.currentUserRole === 'Admin';
+    return this.authService.isAdmin();
   }
 
   get typeLabel(): string {
@@ -59,8 +68,24 @@ export class DeviceDetailComponent implements OnInit {
     return this.device.type === DeviceType.Phone ? 'Phone' : 'Tablet';
   }
 
-  goBack(): void {
-    this.router.navigate(['/devices']);
+  get currentUserId(): string | null {
+    return this.authService.getCurrentUser()?.id ?? null;
+  }
+
+  get assignedUserLabel(): string {
+    return this.device?.assignedUser?.name || 'Unassigned';
+  }
+
+  get isAssignedToCurrentUser(): boolean {
+    return !!this.device?.assignedUserId && this.device.assignedUserId === this.currentUserId;
+  }
+
+  get canToggleAssignment(): boolean {
+    if (!this.device) {
+      return false;
+    }
+
+    return !this.device.assignedUserId || this.isAssignedToCurrentUser;
   }
 
   goToEdit(): void {
@@ -69,6 +94,52 @@ export class DeviceDetailComponent implements OnInit {
     }
 
     this.router.navigate(['/devices', this.device.id, 'edit']);
+  }
+
+  handleAssignmentAction(): void {
+    if (!this.device || !this.canToggleAssignment) {
+      return;
+    }
+
+    this.assignmentError = '';
+
+    const isAssignAction = !this.device.assignedUserId;
+
+    const dialogData: ConfirmDialogData = {
+      title: isAssignAction ? 'Assign device' : 'Unassign device',
+      message: isAssignAction
+        ? `Do you want to assign ${this.device.name} to yourself?`
+        : `Do you want to unassign ${this.device.name} from yourself?`,
+      confirmText: isAssignAction ? 'Assign' : 'Unassign',
+      cancelText: 'Cancel',
+    };
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '360px',
+      data: dialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean | undefined) => {
+      if (!confirmed || !this.device) {
+        return;
+      }
+
+      const request = isAssignAction
+        ? this.deviceService.assign(this.device.id)
+        : this.deviceService.unassign(this.device.id);
+
+      request.subscribe({
+        next: (updatedDevice) => {
+          this.device = updatedDevice;
+          this.assignmentError = '';
+          this.errorStateService.clearApiError();
+        },
+        error: (error: unknown) => {
+          this.assignmentError = getApiErrorMessage(error, 'Failed to assign device.');
+          this.errorStateService.setApiError(this.assignmentError);
+        },
+      });
+    });
   }
 
   generateDescription(): void {
@@ -117,6 +188,7 @@ export class DeviceDetailComponent implements OnInit {
     this.deviceService.getById(deviceId).subscribe({
       next: (device) => {
         this.device = device;
+        this.assignmentError = '';
         this.isLoading = false;
         this.errorStateService.clearApiError();
       },
