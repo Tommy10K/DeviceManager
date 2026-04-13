@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, TimeoutError, timeout } from 'rxjs';
 
 import {
   CreateDeviceRequest,
@@ -16,6 +17,7 @@ import {
   DeviceType,
   GenerateDescriptionRequest,
 } from '../../../core/models/device.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
 import { getApiErrorMessage } from '../../../core/utils/api-error-message';
@@ -36,16 +38,18 @@ import { getApiErrorMessage } from '../../../core/utils/api-error-message';
   templateUrl: './device-form.component.html',
   styleUrl: './device-form.component.scss',
 })
-export class DeviceFormComponent implements OnInit {
+export class DeviceFormComponent implements OnInit, OnDestroy {
   isEditMode = false;
   isLoading = false;
   isSubmitting = false;
   isGeneratingDescription = false;
   errorMessage = '';
+  loadErrorMessage = '';
   private deviceId: string | null = null;
+  private readonly destroy$ = new Subject<void>();
+  private loadingWatchdog: ReturnType<typeof setTimeout> | null = null;
   readonly form;
 
-  readonly currentUserRole: 'Admin' | 'User' = 'Admin';
   readonly deviceTypes = [
     { label: 'Phone', value: DeviceType.Phone },
     { label: 'Tablet', value: DeviceType.Tablet },
@@ -56,6 +60,7 @@ export class DeviceFormComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
+    private readonly authService: AuthService,
     private readonly deviceService: DeviceService,
     private readonly errorStateService: ErrorStateService,
   ) {
@@ -76,19 +81,40 @@ export class DeviceFormComponent implements OnInit {
   ngOnInit(): void {
     this.errorStateService.clearApiError();
 
-    const id = this.route.snapshot.paramMap.get('id');
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((paramMap) => {
+        const id = paramMap.get('id');
 
-    if (!id) {
-      return;
-    }
+        if (!id) {
+          this.isEditMode = false;
+          this.deviceId = null;
+          this.isLoading = false;
+          this.clearLoadingWatchdog();
+          return;
+        }
 
-    this.isEditMode = true;
-    this.deviceId = id;
-    this.loadDeviceForEdit(id);
+        this.isEditMode = true;
+        this.deviceId = id;
+
+        if (this.tryApplyNavigationDeviceState(id)) {
+          this.isLoading = false;
+          this.loadErrorMessage = '';
+          return;
+        }
+
+        this.loadDeviceForEdit(id);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.clearLoadingWatchdog();
   }
 
   get isAdmin(): boolean {
-    return this.currentUserRole === 'Admin';
+    return this.authService.isAdmin();
   }
 
   get pageTitle(): string {
@@ -101,6 +127,7 @@ export class DeviceFormComponent implements OnInit {
       return;
     }
 
+    this.loadErrorMessage = '';
     this.errorMessage = '';
     this.isSubmitting = true;
     this.errorStateService.clearApiError();
@@ -199,34 +226,116 @@ export class DeviceFormComponent implements OnInit {
 
   private loadDeviceForEdit(id: string): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.loadErrorMessage = '';
+    this.errorStateService.clearApiError();
+    this.startLoadingWatchdog();
 
-    this.deviceService.getById(id).subscribe({
+    this.deviceService.getById(id).pipe(
+      timeout(15000),
+      takeUntil(this.destroy$),
+    ).subscribe({
       next: (device) => {
-        this.applyDeviceToForm(device);
-        this.isLoading = false;
+        try {
+          this.applyDeviceToForm(device);
+        } catch {
+          this.loadErrorMessage = 'Device data could not be prepared for editing.';
+          this.errorStateService.setApiError(this.loadErrorMessage);
+        } finally {
+          this.isLoading = false;
+          this.clearLoadingWatchdog();
+        }
       },
-      error: () => {
-        this.errorMessage = 'Failed to load device.';
-        this.errorStateService.setApiError(this.errorMessage);
+      error: (error: unknown) => {
+        if (error instanceof TimeoutError) {
+          this.loadErrorMessage = 'Timed out while loading device details. Please try again.';
+        } else {
+          this.loadErrorMessage = getApiErrorMessage(error, 'Failed to load device.');
+        }
+
+        this.errorStateService.setApiError(this.loadErrorMessage);
         this.isLoading = false;
+        this.clearLoadingWatchdog();
       },
     });
   }
 
+  private tryApplyNavigationDeviceState(routeId: string): boolean {
+    const navigationState =
+      this.router.getCurrentNavigation()?.extras.state ?? history.state;
+
+    const candidate = navigationState?.['device'] as Partial<Device> | undefined;
+    if (!candidate || typeof candidate !== 'object') {
+      return false;
+    }
+
+    const candidateId = this.asText(candidate.id);
+    if (!candidateId || candidateId !== routeId) {
+      return false;
+    }
+
+    this.applyDeviceToForm(candidate as Device);
+    return true;
+  }
+
+  private startLoadingWatchdog(): void {
+    this.clearLoadingWatchdog();
+    this.loadingWatchdog = setTimeout(() => {
+      if (!this.isLoading) {
+        return;
+      }
+
+      this.loadErrorMessage = 'Loading edit form took too long. Please try again.';
+      this.errorStateService.setApiError(this.loadErrorMessage);
+      this.isLoading = false;
+    }, 20000);
+  }
+
+  private clearLoadingWatchdog(): void {
+    if (!this.loadingWatchdog) {
+      return;
+    }
+
+    clearTimeout(this.loadingWatchdog);
+    this.loadingWatchdog = null;
+  }
+
   private applyDeviceToForm(device: Device): void {
     this.form.patchValue({
-      tag: device.tag,
-      name: device.name,
-      manufacturer: device.manufacturer,
-      type: device.type,
-      operatingSystem: device.operatingSystem,
-      osVersion: device.osVersion,
-      processor: device.processor,
-      ramAmount: device.ramAmount,
-      description: device.description ?? '',
-      assignedUserId: device.assignedUserId ?? '',
+      tag: this.asText(device.tag),
+      name: this.asText(device.name),
+      manufacturer: this.asText(device.manufacturer),
+      type: this.parseDeviceType(device.type),
+      operatingSystem: this.asText(device.operatingSystem),
+      osVersion: this.asText(device.osVersion),
+      processor: this.asText(device.processor),
+      ramAmount: this.asText(device.ramAmount),
+      description: this.asText(device.description),
+      assignedUserId: this.asText(device.assignedUserId),
     });
+  }
+
+  private parseDeviceType(value: unknown): DeviceType {
+    if (value === DeviceType.Tablet || value === 1 || value === '1') {
+      return DeviceType.Tablet;
+    }
+
+    if (typeof value === 'string' && value.trim().toLowerCase() === 'tablet') {
+      return DeviceType.Tablet;
+    }
+
+    return DeviceType.Phone;
+  }
+
+  private asText(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return String(value);
   }
 
   private buildRequest(): CreateDeviceRequest {
@@ -283,6 +392,7 @@ export class DeviceFormComponent implements OnInit {
 
   private handleSaveError(error: unknown): void {
     const httpError = error as HttpErrorResponse;
+    this.isSubmitting = false;
 
     if (httpError.status === 409) {
       this.errorMessage = 'A device with this tag already exists.';

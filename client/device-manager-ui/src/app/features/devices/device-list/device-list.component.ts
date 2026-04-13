@@ -216,9 +216,11 @@ export class DeviceListComponent implements OnInit {
     });
   }
 
-  openEdit(deviceId: string, event: Event): void {
+  openEdit(device: Device, event: Event): void {
     event.stopPropagation();
-    this.router.navigate(['/devices', deviceId, 'edit']);
+    this.router.navigate(['/devices', device.id, 'edit'], {
+      state: { device },
+    });
   }
 
   private normalizeForExactMatch(value: string): string {
