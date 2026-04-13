@@ -3,19 +3,81 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div *ngIf="!isLoading && notFound" class="not-found">
+  <mat-card *ngIf="!isLoading && notFound" class="state-card">
     <h2>Device not found</h2>
     <p>The requested device does not exist.</p>
-    <button mat-button type="button" (click)="goBack()">Back</button>
-  </div>
+  </mat-card>
 
-  <p class="error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</p>
+  <mat-card *ngIf="!isLoading && errorMessage" class="state-card error-state-card">
+    <p class="error">{{ errorMessage }}</p>
+  </mat-card>
 
-  <div class="details" *ngIf="!isLoading && !notFound && !errorMessage && device">
-    <header class="page-header">
-      <h1>{{ device.name }}</h1>
-      <div class="actions">
-        <button mat-button type="button" (click)="goBack()">Back</button>
+  <mat-card class="details-card" *ngIf="!isLoading && !notFound && !errorMessage && device">
+    <mat-card-header>
+      <mat-card-title>{{ device.name }}</mat-card-title>
+      <mat-card-subtitle>Tag: {{ device.tag }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="spec-grid">
+        <div class="spec-item">
+          <span class="spec-label">Manufacturer</span>
+          <span class="spec-value">{{ device.manufacturer }}</span>
+        </div>
+
+        <div class="spec-item">
+          <span class="spec-label">Operating System</span>
+          <span class="spec-value">{{ device.operatingSystem }} {{ device.osVersion }}</span>
+        </div>
+
+        <div class="spec-item">
+          <span class="spec-label">Processor</span>
+          <span class="spec-value">{{ device.processor }}</span>
+        </div>
+
+        <div class="spec-item">
+          <span class="spec-label">RAM</span>
+          <span class="spec-value">{{ device.ramAmount }}</span>
+        </div>
+
+        <div class="spec-item">
+          <span class="spec-label">Type</span>
+          <mat-chip class="type-chip" [class.type-chip-tablet]="device.type === 1">
+            {{ typeLabel }}
+          </mat-chip>
+        </div>
+
+        <div class="spec-item">
+          <span class="spec-label">Assigned User</span>
+          <button
+            mat-stroked-button
+            type="button"
+            class="assignment-chip"
+            [class.assignment-chip-unassigned]="!device.assignedUserId"
+            [disabled]="!canToggleAssignment"
+            (click)="handleAssignmentAction()"
+          >
+            {{ assignedUserLabel }}
+          </button>
+        </div>
+
+        <div class="spec-item spec-item-wide">
+          <span class="spec-label">Description</span>
+          <span class="spec-value">{{ device.description || 'No description' }}</span>
+        </div>
+      </div>
+
+      <p class="error" *ngIf="assignmentError">{{ assignmentError }}</p>
+      <p class="error" *ngIf="generatedDescriptionError">{{ generatedDescriptionError }}</p>
+
+      <section class="generated-description" *ngIf="generatedDescription">
+        <h2>AI Generated Description</h2>
+        <p>{{ generatedDescription }}</p>
+      </section>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <div class="card-actions-row">
         <button
           mat-stroked-button
           color="primary"
@@ -29,22 +91,6 @@
           Edit
         </button>
       </div>
-    </header>
-
-    <p><strong>Tag:</strong> {{ device.tag }}</p>
-    <p><strong>Manufacturer:</strong> {{ device.manufacturer }}</p>
-    <p><strong>Type:</strong> {{ typeLabel }}</p>
-    <p><strong>Operating System:</strong> {{ device.operatingSystem }} {{ device.osVersion }}</p>
-    <p><strong>Processor:</strong> {{ device.processor }}</p>
-    <p><strong>RAM:</strong> {{ device.ramAmount }}</p>
-    <p><strong>Description:</strong> {{ device.description || 'No description' }}</p>
-    <p class="error" *ngIf="generatedDescriptionError">{{ generatedDescriptionError }}</p>
-
-    <section class="generated-description" *ngIf="generatedDescription">
-      <h2>AI Generated Description</h2>
-      <p>{{ generatedDescription }}</p>
-    </section>
-
-    <p><strong>Assigned User:</strong> {{ device.assignedUser?.name || 'Unassigned' }}</p>
-  </div>
+    </mat-card-actions>
+  </mat-card>
 </section>
