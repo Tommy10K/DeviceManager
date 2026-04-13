@@ -10,7 +10,7 @@ namespace DeviceManager.Infrastructure.Services;
 
 public sealed class GeminiDescriptionGenerator : IDescriptionGenerator
 {
-    private const string InstructionPrompt = "You are an IT asset management assistant. Generate a single-sentence, professional description of a mobile device based exclusively on the provided technical specifications. Focus on the performance tier, manufacturer identity, and corporate utility. Output only the final description string. Do not include markdown, quotes, or introductory filler text. Maximum length: 30 words.";
+    private const string InstructionPrompt = "You are an IT asset management assistant. Generate a single-sentence, professional description of a mobile device based exclusively on the provided technical specifications. Focus on the performance tier, manufacturer identity, and corporate utility. Output only the final description string. Do not include markdown, quotes, or introductory filler text. Maximum length: 40 words.";
 
     private readonly HttpClient _httpClient;
     private readonly GeminiSettings _settings;
