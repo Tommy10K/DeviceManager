@@ -94,6 +94,20 @@ Seeded accounts:
 - Admin: `admin@test.com` / `admin1`
 - User: `user@test.com` / `user11`
 
+## Optional: Enable Gemini AI
+
+To enable AI description generation quickly, hardcode your key in:
+
+- `src/DeviceManager.API/appsettings.json`
+
+Update the `Gemini` section:
+
+```json
+"Gemini": {
+  "ApiKey": "YOUR_GEMINI_API_KEY"
+}
+```
+
 ## Ports In Use
 
 If `4200`, `5109`, or `7172` are busy:
