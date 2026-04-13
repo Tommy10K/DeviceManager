@@ -99,7 +99,19 @@ export class DeviceListComponent implements OnInit {
       return false;
     }
 
-    return this.normalizeForExactMatch(device.name) === this.normalizeForExactMatch(this.searchControl.value);
+    const queryTokens = this.tokenizeNormalized(this.searchControl.value);
+    if (queryTokens.length === 0) {
+      return false;
+    }
+
+    const nameTokens = this.tokenizeNormalized(device.name);
+    const hasCompleteNameMatch = nameTokens.length > 0 && nameTokens.every((token) => queryTokens.includes(token));
+    if (!hasCompleteNameMatch) {
+      return false;
+    }
+
+    const searchableDeviceText = this.buildSearchableDeviceText(device);
+    return queryTokens.every((token) => searchableDeviceText.includes(token));
   }
 
   loadDevices(query?: string): void {
@@ -215,5 +227,27 @@ export class DeviceListComponent implements OnInit {
       .split(/\s+/)
       .join(' ')
       .toLowerCase();
+  }
+
+  private tokenizeNormalized(value: string): string[] {
+    const normalized = this.normalizeForExactMatch(value);
+    return normalized.length === 0 ? [] : normalized.split(' ');
+  }
+
+  private buildSearchableDeviceText(device: Device): string {
+    const values = [
+      device.tag,
+      device.name,
+      device.manufacturer,
+      this.getTypeLabel(device.type),
+      device.operatingSystem,
+      device.osVersion,
+      device.processor,
+      device.ramAmount,
+      device.description ?? '',
+      device.assignedUser?.name ?? '',
+    ];
+
+    return this.normalizeForExactMatch(values.join(' '));
   }
 }
