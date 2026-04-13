@@ -128,6 +128,13 @@ Architecture (high level):
 - Domain contains entities/enums, Application contains use cases/business rules, Infrastructure contains EF Core/JWT/Gemini integrations.
 - API controllers stay thin and call Application services; Angular frontend consumes API endpoints.
 
+GitHub workflow and delivery discipline:
+
+- I committed frequently in small, steady steps instead of making large one-time changes.
+- I worked in separate branches for features and fixes, then merged them after validation.
+- I linked work to GitHub Issues and closed them with auto-close words like `Closes #<issue-number>`.
+- I used milestones to organize work and keep progress visible across the project.
+
 Gemini description generation:
 
 - AI descriptions are generated through Gemini with a fixed instruction prompt and explicit device specs.
