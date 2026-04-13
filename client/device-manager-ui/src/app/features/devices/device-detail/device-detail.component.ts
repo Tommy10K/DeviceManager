@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Device, DeviceType } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
+import { getApiErrorMessage } from '../../../core/utils/api-error-message';
 
 @Component({
   selector: 'app-device-detail',
@@ -80,13 +81,26 @@ export class DeviceDetailComponent implements OnInit {
 
     this.deviceService.generateDescriptionForDevice(this.device.id).subscribe({
       next: (description) => {
-        const generatedText = typeof description === 'string' ? description : String(description);
+        const generatedText = this.normalizeGeneratedDescription(
+          typeof description === 'string' ? description : String(description),
+        );
 
-        this.generatedDescription = generatedText.trim() || 'No generated description was returned.';
+        if (generatedText.length === 0) {
+          this.generatedDescriptionError = 'AI provider returned an empty description.';
+          this.generatedDescription = '';
+          this.errorStateService.setApiError(this.generatedDescriptionError);
+          this.isGeneratingDescription = false;
+          return;
+        }
+
+        this.generatedDescription = generatedText;
+        this.errorStateService.clearApiError();
         this.isGeneratingDescription = false;
       },
-      error: () => {
-        this.generatedDescriptionError = 'Failed to generate description.';
+      error: (error: unknown) => {
+        this.generatedDescriptionError = getApiErrorMessage(error, 'Failed to generate description.');
+        this.generatedDescription = '';
+        this.errorStateService.setApiError(this.generatedDescriptionError);
         this.isGeneratingDescription = false;
       },
       complete: () => {
@@ -119,5 +133,22 @@ export class DeviceDetailComponent implements OnInit {
         this.isLoading = false;
       },
     });
+  }
+
+  private normalizeGeneratedDescription(value: string): string {
+    const trimmed = value.trim();
+
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (typeof parsed === 'string') {
+          return parsed.trim();
+        }
+      } catch {
+        // Keep original trimmed value when it is not valid JSON string.
+      }
+    }
+
+    return trimmed;
   }
 }

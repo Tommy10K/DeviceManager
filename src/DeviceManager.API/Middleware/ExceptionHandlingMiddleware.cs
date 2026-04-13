@@ -65,6 +65,7 @@ public sealed class ExceptionHandlingMiddleware
             ConflictException => (HttpStatusCode.Conflict, "Conflict"),
             BadRequestException => (HttpStatusCode.BadRequest, "Bad request"),
             ForbiddenException => (HttpStatusCode.Forbidden, "Forbidden"),
+            ExternalServiceException externalServiceException => ((HttpStatusCode)externalServiceException.StatusCode, externalServiceException.ErrorTitle),
             ValidationException => (HttpStatusCode.BadRequest, "Validation failed"),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred")
         };
