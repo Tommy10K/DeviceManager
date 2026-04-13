@@ -18,6 +18,7 @@ import {
 } from '../../../core/models/device.model';
 import { DeviceService } from '../../../core/services/device.service';
 import { ErrorStateService } from '../../../core/services/error-state.service';
+import { getApiErrorMessage } from '../../../core/utils/api-error-message';
 
 @Component({
   selector: 'app-device-form',
@@ -159,7 +160,19 @@ export class DeviceFormComponent implements OnInit {
 
     this.deviceService.generateDescription(request).subscribe({
       next: (description) => {
-        const generatedText = typeof description === 'string' ? description : String(description);
+        const generatedText = this.normalizeGeneratedDescription(
+          typeof description === 'string' ? description : String(description),
+        );
+
+        if (generatedText.length === 0) {
+          this.errorMessage = 'AI provider returned an empty description.';
+          this.errorStateService.setApiError(this.errorMessage);
+          this.snackBar.open(this.errorMessage, 'Close', {
+            duration: 3000,
+          });
+
+          return;
+        }
 
         this.form.controls.description.setValue(generatedText);
         this.form.controls.description.markAsDirty();
@@ -169,8 +182,8 @@ export class DeviceFormComponent implements OnInit {
           duration: 2500,
         });
       },
-      error: () => {
-        this.errorMessage = 'Failed to generate description.';
+      error: (error: unknown) => {
+        this.errorMessage = getApiErrorMessage(error, 'Failed to generate description.');
         this.errorStateService.setApiError(this.errorMessage);
         this.isGeneratingDescription = false;
 
@@ -274,7 +287,7 @@ export class DeviceFormComponent implements OnInit {
     if (httpError.status === 409) {
       this.errorMessage = 'A device with this tag already exists.';
     } else {
-      this.errorMessage = 'Failed to save device.';
+      this.errorMessage = getApiErrorMessage(error, 'Failed to save device.');
     }
 
     this.errorStateService.setApiError(this.errorMessage);
@@ -282,5 +295,22 @@ export class DeviceFormComponent implements OnInit {
     this.snackBar.open(this.errorMessage, 'Close', {
       duration: 3000,
     });
+  }
+
+  private normalizeGeneratedDescription(value: string): string {
+    const trimmed = value.trim();
+
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (typeof parsed === 'string') {
+          return parsed.trim();
+        }
+      } catch {
+        // Keep original trimmed value when it is not valid JSON string.
+      }
+    }
+
+    return trimmed;
   }
 }

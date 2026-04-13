@@ -159,7 +159,7 @@ public sealed class DevicesController : ControllerBase
             Processor: request.Processor.Trim());
 
         var description = await _descriptionGenerator.GenerateDescriptionAsync(specs);
-        return Ok(description);
+        return Content(description, "text/plain");
     }
 
     /// <summary>
@@ -182,7 +182,7 @@ public sealed class DevicesController : ControllerBase
             Processor: device.Processor);
 
         var description = await _descriptionGenerator.GenerateDescriptionAsync(specs);
-        return Ok(description);
+        return Content(description, "text/plain");
     }
 
     private static void ValidateGenerateDescriptionRequest(GenerateDescriptionRequest request)
